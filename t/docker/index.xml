@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Docker on FeixiangFu</title><link>https://silentkeeping.github.io/t/docker/</link><description>Recent content in Docker on FeixiangFu</description><generator>Hugo -- gohugo.io</generator><language>zh-ch</language><copyright>© 2023 FeixiangFu</copyright><lastBuildDate>Sun, 09 Dec 2018 00:00:00 +0000</lastBuildDate><atom:link href="https://silentkeeping.github.io/t/docker/index.xml" rel="self" type="application/rss+xml"/><item><title>P2P文件与镜像分发开源解决方案Dragonfly安装部署</title><link>https://silentkeeping.github.io/2018/12/docker-dragonfly/</link><pubDate>Sun, 09 Dec 2018 00:00:00 +0000</pubDate><guid>https://silentkeeping.github.io/2018/12/docker-dragonfly/</guid><description>&lt;h4 class="relative group">前言
+&lt;div id="前言" class="anchor">&lt;/div>
+&lt;span
+class="absolute top-0 w-6 transition-opacity opacity-0 ltr:-left-6 rtl:-right-6 not-prose group-hover:opacity-100">
+&lt;a class="group-hover:text-primary-300 dark:group-hover:text-neutral-700"
+style="text-decoration-line: none !important;" href="#%e5%89%8d%e8%a8%80" aria-label="锚点">#&lt;/a>
+&lt;/span>
+&lt;/h4>
+&lt;blockquote>
+&lt;p>随着公司容器管理平台部署的系统越来越多，所纳管集群主机也越来越多，面对大规模的文件和镜像分发，由于单一文件服务器、镜像仓库实例会受到部署主机的网络带宽限制，导致分发耗时长、成功率低的问题。利用P2P技术搭建文件和镜像的分发系统，文件和镜像可在集群主机之间共享传输，可有效解决上述问题。&lt;/p>
+&lt;/blockquote></description></item><item><title>Docker配置TLS安全认证</title><link>https://silentkeeping.github.io/2018/08/docker-tls/</link><pubDate>Wed, 08 Aug 2018 00:00:00 +0000</pubDate><guid>https://silentkeeping.github.io/2018/08/docker-tls/</guid><description>&lt;h4 class="relative group">背景
+&lt;div id="背景" class="anchor">&lt;/div>
+&lt;span
+class="absolute top-0 w-6 transition-opacity opacity-0 ltr:-left-6 rtl:-right-6 not-prose group-hover:opacity-100">
+&lt;a class="group-hover:text-primary-300 dark:group-hover:text-neutral-700"
+style="text-decoration-line: none !important;" href="#%e8%83%8c%e6%99%af" aria-label="锚点">#&lt;/a>
+&lt;/span>
+&lt;/h4>
+&lt;blockquote>
+&lt;p>通常，我们在配置docker daemon的监听方式为本地的socket和开放TCP端口，docker服务允许远程访问，方便对docker集群的主机执行管理命令及调用等。如果不使用TLS加密docker，任意客户端都可以对docker主机进行远程操作，有很大的安全隐患。而配置TLS后，只有信任的客户端才可以远程访问docker服务。&lt;/p>
+&lt;/blockquote></description></item><item><title>批量export Docker镜像脚本</title><link>https://silentkeeping.github.io/2018/08/docker-images-export/</link><pubDate>Tue, 07 Aug 2018 00:00:00 +0000</pubDate><guid>https://silentkeeping.github.io/2018/08/docker-images-export/</guid><description>背景 # 公司容器管理平台需要周期性对weblogic镜像进行打补丁升级操作，由于docker的分层管理机制，weblogic镜像体积会越来越大，影响后续的维护部署。我就写了一个批量export镜像并推送至镜像仓库的脚本，来精简镜像大小
+脚本运行示例 # 脚本执行步骤 # 准备镜像列表文件
+$ cat images_list.txt &amp;lt;-- 需要export的镜像 registry:8088/nginx:latest registry:8088/kubernetes-dashboard-amd64:v1.5.0 #export之前镜像仓库中的镜像tag $ curl registry:8088/v2/nginx/tags/list {&amp;#34;name&amp;#34;:&amp;#34;nginx&amp;#34;,&amp;#34;tags&amp;#34;:[&amp;#34;latest&amp;#34;]} $ curl registry:8088/v2/kubernetes-dashboard-amd64/tags/list {&amp;#34;name&amp;#34;:&amp;#34;kubernetes-dashboard-amd64&amp;#34;,&amp;#34;tags&amp;#34;:[&amp;#34;v1.5.0&amp;#34;]} 运行脚本
+$ sh export-images.sh -h ------------------------------------------------------------------------- Usage: export_images.</description></item><item><title>Docker存储驱动direct-lvm的配置</title><link>https://silentkeeping.github.io/2018/05/docker-devicemapper/</link><pubDate>Tue, 08 May 2018 00:00:00 +0000</pubDate><guid>https://silentkeeping.github.io/2018/05/docker-devicemapper/</guid><description>devicemapper是Linux发行版RHEL下Docker Engine的默认存储驱动，它有两种配置模式: loop-lvm和direct-lvm
+loop-lvm是默认模式，基于loop设备文件创建thin pool来存储docker镜像及容器数据，官方不推荐在生产环境中使用此模式 direct-lvm是直接使用块设备创建thin pool，在中等负载和高密度环境下会有更好的性能优势，也是官方推荐在生产环境中使用的模式 基础环境准备 # 操作系统: CentOS7.2
+Docker Engine: docker-engine-1.13.1-1.el7.centos.x86_64
+硬盘: /dev/sda,/dev/sdb
+$ lsblk NAME MAJ:MIN RM SIZE RO TYPE MOUNTPOINT sda 8:0 0 200G 0 disk ├─sda1 8:1 0 500M 0 part /boot └─sda2 8:2 0 190G 0 part ├─centos-root 253:0 0 90G 0 lvm / └─centos-data 253:1 0 100G 0 lvm /data sdb 8:16 0 100G 0 disk sr0 11:0 1 603M 0 rom 划分逻辑卷 # 基于/dev/sdb制作逻辑卷组appvg, 并划分逻辑卷appvg-docker，用于挂载docker graph目录(/docker) $ pvcreate /dev/sdb Physical volume &amp;#34;/dev/sdb&amp;#34; successfully created $ vgcreate appvg /dev/sdb Volume group &amp;#34;appvg&amp;#34; successfully created #规划20G用于逻辑卷/dev/appvg/docker $ lvcreate -n docker -L 20G appvg Logical volume &amp;#34;docker&amp;#34; created.</description></item><item><title>批量自动构建docker镜像的shell脚本</title><link>https://silentkeeping.github.io/2018/01/build-docker-image/</link><pubDate>Sat, 06 Jan 2018 00:00:00 +0000</pubDate><guid>https://silentkeeping.github.io/2018/01/build-docker-image/</guid><description>背景 # 目前，由于公司多个相互隔离环境并存，各个环境都部署有容器管理平台，当有docker image更新的时候，就需要在每个环境都修改Dockerfile并执行docker build &amp;amp; docker push到公共镜像仓库的操作，为了减少重复性的工作，我就写了一个自动构建镜像的脚本，只需要在一个环境中准备好构建镜像的Dockerfile及依赖文件，执行脚本完成构建和推送，然后打包构建镜像的文件夹并传输到另一环境，执行脚本就可以自动完成
+脚本运行示例 # 构建脚本的目录结构 # 01.20171229文件夹 &amp;lt;&amp;mdash;&amp;gt; 要构建镜像的tag
+构建镜像步骤 # 创建目录 # $ cd /data/dcos $ mkdir -p buildimages/01.20171229 log $ cd buildimages/01.20171229 #创建各个需要build镜像的文件夹 $ mkdir centos7.</description></item></channel></rss>

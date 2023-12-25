@@ -1,4 +1,92 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Linux on FeixiangFu</title><link>https://silentkeeping.github.io/t/linux/</link><description>Recent content in Linux on FeixiangFu</description><generator>Hugo -- gohugo.io</generator><language>zh-ch</language><copyright>© 2023 FeixiangFu</copyright><lastBuildDate>Tue, 12 Sep 2023 00:00:00 +0000</lastBuildDate><atom:link href="https://silentkeeping.github.io/t/linux/index.xml" rel="self" type="application/rss+xml"/><item><title>一次请求超时问题排查记录</title><link>https://silentkeeping.github.io/2023/09/timeout-time_wait/</link><pubDate>Tue, 12 Sep 2023 00:00:00 +0000</pubDate><guid>https://silentkeeping.github.io/2023/09/timeout-time_wait/</guid><description>背景 # 服务pod实例访问对方接口频繁超时，引起客诉。我们通过专线与对方机房互联，并且专线接入侧部署有专用物理设备(vpn加密通道)，架构图如下 问题分析 # 客户端请求抓包 # 对服务pod实例抓包分析，发现超时的http请求均为发送syn包无响应导致tcp连接建立失败超时。同时专线网络监控比较稳，可以排除专线网络丢包的原因 对方服务器抓包 # 联系对方协助在server机器上抓包，分析对方提供的抓包文件:
 客户端请求经过防火墙SNAT后，对方server看到的客户端IP都一样 服务器上收到了SYN包，但是回复的是ACK包，而不是SYN+ACK包 超时重传都发生在客户端请求源端口复用时(十几秒~九十几秒) client复用端口时，对比server发送的ACK包和相同五元组TCP连接断开时发送的最后一个ACK包，Acknowledgment number是相同的 HTTP response header中包含Connection: close，server只支持http1.0短连接，客户端请求完成后server主动断开TCP连接并进入TIME-WAIT状态 根据以上分析推断，对于新请求server端复用了之前的TCP连接，TCP连接处于TIME-WAIT状态
 还有一个问题，server回复了ACK包，客户端为什么没有收到？ 通过在专用设备上抓包分析，发现收到了ACK回包，推测是被防火墙drop。因为防火墙TCP连接TIME-WAIT状态timeout时间为1s，对于客户端新请求SYN包，会新建tcp session，收到server ACK回包后，认为非法就drop了
-解决方案 # 支持HTTP1.1长连接 # 接口支持http1.1长连接，客户端请求完成后会主动断开TCP连接，TIME-WAIT状态维持在客户端。对方反馈无法支持</description></item><item><title>/etc/fstab及/boot分区文件恢复</title><link>https://silentkeeping.github.io/2015/10/partion-recover/</link><pubDate>Tue, 06 Oct 2015 00:00:00 +0000</pubDate><guid>https://silentkeeping.github.io/2015/10/partion-recover/</guid><description>&lt;p>​ 以centos6为例，/boot目录下有最为关键的开机启动所必须的内核文件、根文件系统驱动文件已经引导加载程序(bootloader)grub。当我们清空此文件夹之后关机，机器就不能正常启动了，这种情况下，可以借助光盘启动进入救援模式解决。具体步骤如下：&lt;/p></description></item></channel></rss>
+解决方案 # 支持HTTP1.1长连接 # 接口支持http1.1长连接，客户端请求完成后会主动断开TCP连接，TIME-WAIT状态维持在客户端。对方反馈无法支持</description></item><item><title>nginx负载均衡apache+tomcat集群及session server cluster的实现</title><link>https://silentkeeping.github.io/2017/09/nginx-tomcat-seesion-cluster/</link><pubDate>Tue, 19 Sep 2017 00:00:00 +0000</pubDate><guid>https://silentkeeping.github.io/2017/09/nginx-tomcat-seesion-cluster/</guid><description>​ Tomcat 服务器是一个免费的开放源代码的Web 应用服务器, 是编译JSP\Servlet的容器，常用来处理动态请求。nginx和apache HTTP服务器是静态解析，擅长处理HTML及图片等静态请求，处理静态页面效率远高于tomcat。使用nginx的动静分离机制，可以将静态请求分发至静态服务器(nginx或者apache)，而将动态请求分发至后端tomcat服务器处理，从而提高服务器的并发处理性能。tomcat支持HTTP和AJP两种协议的连接器，AJP协议比HTTP更稳定和更快，但是nginx仅支持HTTP协议，所以本文使用nginx做负载均衡，在后端web服务器上配置apache+tomcat服务并使用ajp协议，提高响应速度。
+对于后端tomcat cluster的session会话管理，本文将使用MSM&amp;ndash;Memcached_Session_Manager搭建 session server cluster, 实现session会话保持和高可用(session共享)。Memcached是一款开源、高性能、分布式内存对象缓存系统，可应用各种需要缓存的场景，其主要目的是通过降低对Database的访问来加速web应用程序。它是一个基于内存的“键值对”存储，用于存储数据库调用、API调用或页面引用结果的直接数据，如字符串、对象等。但是，tomcat与memcached的结合并不是为了加速获取mysql数据的，而是仅仅把tomcat自己与客户端一侧维持的会话保存到memcached中，它与用户请求无关，是服务端主动记录client身份信息或者活动性的数据并存在memcached中，从而加速客户端会话访问，实现动态站点加速。
+​ 本文集群架构如下图： IP 地址分配:
+nginx server : 192.168.196.130 web server 1 : 192.168.196.129 web server 2: 192.168.196.132 session server 1: 192.</description></item><item><title>varnish缓存服务器的配置</title><link>https://silentkeeping.github.io/2017/09/varnish/</link><pubDate>Sun, 10 Sep 2017 00:00:00 +0000</pubDate><guid>https://silentkeeping.github.io/2017/09/varnish/</guid><description>Varnish简介 # Varnish是一款高性能且开源的反向代理服务器和 HTTP 加速器，支持采用基于linux系统内存的缓存服务器。
+varnish的系统架构如下图：
+varnish是主要运行两个进程：Management进程和Child进程(也叫Cache进程)，基于 epoll机制的单进程多线程架构 Management进程类似于nginx中的master,主要实现 编译VCL并应用新配置(通知子进程);监控varnish格子进程运行状态，初始化varnish; 提供一个CLI接口(命令行接口)指挥管理进程 等。Management进程会每隔几秒钟探测一下Child进程以判断其是否正常运行，如果在指定的时长内未得到Child进程的回应，Management将会重启此Child进程。 Child进程包含多种类型的线程，常见的如： Acceptor线程：接收新的连接请求并响应 Worker线程：child进程会为每个会话启动一个worker线程，因此，在高并发的场景中可能会出现数百个worker线程甚至更多 Expiry线程：从缓存中清理过期内容 varnish通过使用VCL(Varnish Configuration Language )配置缓存系统的缓存策略，VCL编译器调用C编译器,C编译器编译配置文件为二进制文件并连接至child进程。 VCL语法格式
+(1)//、#或/* comment */用于注释 (2)sub $name 定义函数 (3)不支持循环，有内置变量 (4)使用终止语句，没有返回值 (5)域专用 (6)操作符：=(赋值)、==(等值比较)、~(模式匹配)、!</description></item><item><title>DNS服务器据源地址解析的实现</title><link>https://silentkeeping.github.io/2017/08/dns-acl/</link><pubDate>Mon, 07 Aug 2017 00:00:00 +0000</pubDate><guid>https://silentkeeping.github.io/2017/08/dns-acl/</guid><description>&lt;h3 class="relative group">&amp;ldquo;就近&amp;quot;解析的优点
+&lt;div id="就近解析的优点" class="anchor">&lt;/div>
+&lt;span
+class="absolute top-0 w-6 transition-opacity opacity-0 ltr:-left-6 rtl:-right-6 not-prose group-hover:opacity-100">
+&lt;a class="group-hover:text-primary-300 dark:group-hover:text-neutral-700"
+style="text-decoration-line: none !important;" href="#%e5%b0%b1%e8%bf%91%e8%a7%a3%e6%9e%90%e7%9a%84%e4%bc%98%e7%82%b9" aria-label="锚点">#&lt;/a>
+&lt;/span>
+&lt;/h3>
+&lt;p>​ 假设有一个面向全网络的web服务，并且服务器都集中在一个地方，而访问请求是来自全国各地的，网络传输线路的长短势必会影响访问响应质量和速度。因此，为了提高客户端访问速度、提供容错能力等，公司可能会按区域部署服务器，比如说在北京、杭州、广州等地，每台服务器刚好能优先响应离自己最近的访问请求，从而提高服务器响应速度。&lt;/p></description></item><item><title>使用XtraBackup工具实现MySQL数据备份及恢复</title><link>https://silentkeeping.github.io/2016/12/xtrabackup/</link><pubDate>Thu, 08 Dec 2016 00:00:00 +0000</pubDate><guid>https://silentkeeping.github.io/2016/12/xtrabackup/</guid><description>Xtrabackup是由percona提供的mysql数据库备份工具，支持对Innodb存储引擎的数据库在线热备份（备份时不影响数据读写), 它有以下特点：
+(1)备份过程快速、可靠； (2)备份过程不会打断正在执行的事务； (3)能够基于压缩等功能节约磁盘空间和流量； (4)自动实现备份检验； (5)还原速度快；
+本文使用的软件包为 percona-xtrabackup-24-2.4.7-2.el7.x86_64.rpm ，最新版的软件可从 http://www.percona.com/software/percona-xtrabackup/ 获得
+为解决依赖性关系使用yum源安装
+$ yum install -y ./percona-xtrabackup-24-2.4.7-2.el7.x86_64.rpm 本文的备份策略： 全量备份+增量备份+binlog
+使用root用户进行一次全量备份 $ cd /var/lib/mysql $ innobackupex --user=root --host=localhost --password=123456 /data/backup/ .</description></item><item><title>使用mysqldump工具实现MySQL数据备份</title><link>https://silentkeeping.github.io/2016/11/mysqldump/</link><pubDate>Fri, 18 Nov 2016 00:00:00 +0000</pubDate><guid>https://silentkeeping.github.io/2016/11/mysqldump/</guid><description>mysqldump是一款mysql服务自带的功能强大的逻辑备份工具，通常使用mysqldump对 MySQL 数据库进行逻辑全量备份(所有数据集)。 mysqldump可以把要备份的数据库装载到一个单独的文本文件中，这个文件包含有所有重建该数据库所需要的SQL命令，这个文本文件可以用一个简单的批处理和一个合适SQL语句导回到MySQL中，完成恢复。
+备份单个数据库或单个数据库中的指定表： ​ mysqldump [OPTIONS] database [tables]
+备份多个数据库： ​ mysqldump [OPTIONS] &amp;ndash;databases [OPTIONS] DB1 [DB2 DB3&amp;hellip;]
+备份所有数据库： ​ mysqldump [OPTIONS] &amp;ndash;all-databases [OPTIONS]
+对于使用MyISAM存储引擎的mysql只支持温备, Innodb存储引擎还支持热备
+热备：读写操作均可进行的状态下所做的备份；
+温备：可读但不可写状态下进行的备份
+冷备：读写操作均不可进行的状态下所做的备份； 服务不在线</description></item><item><title>MySQL主从复制的实现</title><link>https://silentkeeping.github.io/2016/11/mysql-replication/</link><pubDate>Sun, 06 Nov 2016 00:00:00 +0000</pubDate><guid>https://silentkeeping.github.io/2016/11/mysql-replication/</guid><description>MySQL主从复制原理 # 从节点的I/O线程向主节点请求binlog事件，主节点Dump线程读取binlog事件并发送事件至从节点I/O线程，从节点将事件写到relay log（中继日志） 文件中；之后从节点的SQL 线程，会读取relay log文件中的日志，重放事件来实现主从数据一致。
+事实上，主节点是可以并行写的(mysql的并发)，而binlog是串行写(每次写一个事件) ，所以主从复制中，mysql是单线程复制，也就不可避免的造成了主从数据同步有延迟，所以主从复制也成为异步复制
+主从复制配置 # 本文以一主一从为例。
+在配置之前确保时间同步，并且从节点的版本号与主节点相同或者高于主节点的版本号
+配置主服务器 开启二进制日志记录binlog
+$ vim /etc/my.cnf.d/server.cnf [mysqld] server_id = 1 log_bin = master-log skip_name_resolve = ON &amp;lt;-- Centos6不支持 innodb_file_per_table = ON 创建用于复制的账号并授权</description></item><item><title>Nginx+php-fpm分离部署搭建wordpress</title><link>https://silentkeeping.github.io/2016/09/nginx-php-fpm/</link><pubDate>Thu, 15 Sep 2016 00:00:00 +0000</pubDate><guid>https://silentkeeping.github.io/2016/09/nginx-php-fpm/</guid><description>&lt;p>Nginx是一个高性能的HTTP和反向代理服务器，也是一个IMAP/POP3/SMTP服务器。它是基于事件驱动模型，能承受万级别的高并发http请求。由于其负载性能很好，它合适做前端服务器，而高速处理静态类文件也是它的优点。nginx通过使用ngx_http_fastcgi_module模块也可以将客户端动态请求反向代理到后端的php-fpm，两者之间遵循FastCGI协议。&lt;/p></description></item><item><title>CentOS6 mariadb二进制安装</title><link>https://silentkeeping.github.io/2016/08/centos6-mariadb/</link><pubDate>Wed, 31 Aug 2016 00:00:00 +0000</pubDate><guid>https://silentkeeping.github.io/2016/08/centos6-mariadb/</guid><description>&lt;p>MariaDB 是一个采用Maria 存储引擎的MySQL分支版本，是由原来 MySQL 的作者Michael Widenius创办的公司所开发的免费开源的数据库服务器。MariaDB是目前最受关注的MySQL数据库衍生版，也被视为开源数据库MySQL的替代品。除了使用Linux 各发行版供应商的程序包安装，也可以选择基于二进制格式的程序包进行安装。具体安装步骤如下：&lt;/p></description></item><item><title>Keepalived+nginx LB高可用集群实现</title><link>https://silentkeeping.github.io/2016/07/keepalived-nginx/</link><pubDate>Wed, 20 Jul 2016 00:00:00 +0000</pubDate><guid>https://silentkeeping.github.io/2016/07/keepalived-nginx/</guid><description>&lt;h3 class="relative group">keepalived简介
+&lt;div id="keepalived简介" class="anchor">&lt;/div>
+&lt;span
+class="absolute top-0 w-6 transition-opacity opacity-0 ltr:-left-6 rtl:-right-6 not-prose group-hover:opacity-100">
+&lt;a class="group-hover:text-primary-300 dark:group-hover:text-neutral-700"
+style="text-decoration-line: none !important;" href="#keepalived%e7%ae%80%e4%bb%8b" aria-label="锚点">#&lt;/a>
+&lt;/span>
+&lt;/h3>
+&lt;p>keepalived是一款解决负载均衡(调度器)的高可用问题的软件，可以实现负载均衡器的故障转移(failover)，原生设计的目的为了高可用ipvs服务，后来增加了脚本调用接口，使其一定程度上具有了管控服务进程的功能，基于此接口也可以支持nginx、haproxy负载均衡的高可用。keepalived是VRRP协议的软件实现，也基于VRRP协议完成地址流动，那什么是VRRP协议呢？&lt;/p></description></item><item><title>LVS DR 负载均衡实现</title><link>https://silentkeeping.github.io/2016/06/lvs-dr/</link><pubDate>Fri, 03 Jun 2016 00:00:00 +0000</pubDate><guid>https://silentkeeping.github.io/2016/06/lvs-dr/</guid><description>上篇关于 LVS-nat 模式的负载均衡实现博客中已经简单介绍了有关LVS集群的概念、四种IP负载均衡技术以及十种调度算法，本文将详细介绍LVS-DR(直接路由)模式的实现
+​ LVS-DR：Direct Routing, LVS默认模式, 通过为请求报文重新封装一个MAC首部进行转发，源MAC是DIP所在的接口的MAC，目标MAC是某挑选出的RS的RIP所在接口的MAC地址；源IP/PORT，以及目标IP/PORT均保持不变。请求报文同样要经由 Director，但与nat不同的是DR模式下的响应报文不经由 Director，而由RS直接发往Client
+DR模式调度流程 # 网络传输时，经过路由转发，会修改源mac为该转发路由的mac
+Director和各RS都配置有VIP
+确保RS响应报文中源IP为VIP，进而走直接路由返回client
+解决地址冲突, 确保前端路由器将目标IP为VIP的请求报文发往Director,而不是RS，三种方法：
+在前端网关做静态绑定VIP和Director的MAC地址
+在RS上使用arptables工具
+arptables -A IN -d VIP -j DROP arptables -A OUT -s VIP -j mangle &amp;ndash;mangle -ip -s RIP</description></item><item><title>LVS NAT 负载均衡的实现</title><link>https://silentkeeping.github.io/2016/05/lvs-nat/</link><pubDate>Mon, 16 May 2016 00:00:00 +0000</pubDate><guid>https://silentkeeping.github.io/2016/05/lvs-nat/</guid><description>什么是LVS # LVS: Linux Virtual Server，即Linux虚拟服务器，是一个虚拟的服务器集群系统
+LVS集群由VS(Virtual Server)负责调度,RS(Real Server)负责真正提供服务。VS根据请求报文的目标IP和目标协议及端口将其调度转发至某RS，根据调度算法来挑选RS，实现负载均衡，而且调度器自动屏蔽掉服务器的故障，从而将一组服务器构成一个高性能的、高可用的虚拟服务器。 lvs集群的类型：
+lvs-nat：多目标IP的DNAT(Network Address Translation)，通过将请求报文中的目标地址和目标端口修改为某挑出的RS的RIP和PORT实现转发&amp;mdash;&amp;ndash;本文将对nat模式及其实现做详细解释 lvs-dr：Direct Routing, LVS默认模式, 通过为请求报文重新封装一个MAC首部进行转发，源MAC是DIP所在的接口的MAC，目标MAC是某挑选出的RS的RIP所在接口的MAC地址；源IP/PORT，以及目标IP/PORT均保持不变 lvs-tun：不修改请求报文的IP首部, 在原请求IP报文之外封装一个IP首部, 将报文发往挑选出的目标RS,RS直接响应给客户端 lvs-fullnat：通过同时修改请求报文的源IP地址和目标IP地址进行转发,此类型kernel默认不支持 ipvsadm与ipvs：
+ipvsadm是用户空间的命令行工具，规则管理器，实现用户管理集群服务及RealServer 管理集群服务：增、改、删 增、改：
+ipvsadm -A|E -t|u|f service-address [-s scheduler] [-p [timeout]]</description></item><item><title>如何使用openssl工具创建私有CA</title><link>https://silentkeeping.github.io/2016/04/openssl-ca/</link><pubDate>Wed, 20 Apr 2016 00:00:00 +0000</pubDate><guid>https://silentkeeping.github.io/2016/04/openssl-ca/</guid><description>CA及证书 # 非对称加密是为了保证互联网中通讯信息安全使用的一种算法，密钥是成对出现(公钥和私钥），它的特点是发送方A使用接收方B的公钥加密数据，所有只有B拥有与之配对的私钥解密该数据，反之亦然。那么，A和B之间怎么交换得到对方的真实安全的公钥呢？此时就需要一个权威的机构来验证公钥的合法性，这个机构称之为CA(Certification Authority)。CA为每个使用公开密钥的客户发放数字证书，数字证书的作用是证明证书中列出的客户合法拥有证书中列出的公开密钥。
+获取证书两种方法 # 使用证书授权机构： # 生成签名请求(csr) –&amp;gt;将csr发送给CA –&amp;gt; 从CA处接收签名 。参考下图： CA证书颁发过程(假设只有一级CA) 很多权威的根CA会被内置到操作系统里面，用户安装系统之后也就会拥有根CA的公钥，所以可以获得上级CA的公钥，进而可以申请证书。参考下图：主机通过RootCA获得上级CA的公钥
+自签名的证书 # OpenSSL是一个免费开源的库，它提供了构建数字证书的命令行工具，其中一些可以用来自建RootCA并签发自己的公钥
+1.创建私有CA # 创建之前要了解一下openssl的配置文件： /etc/pki/tls/openssl.cnf
+[ ca ] default_ca = CA_default # The default ca section &amp;lt;--启用的CA名字 [ CA_default ] dir = /etc/pki/CA # Where everything is kept &amp;lt;--相关文件存放目录 certs = $dir/certs # Where the issued certs are kept &amp;lt;--存档颁发证书文件 crl_dir = $dir/crl # Where the issued crl are kept &amp;lt;--吊销证书列表 database = $dir/index.</description></item><item><title>PXE自动化安装CentOS7</title><link>https://silentkeeping.github.io/2016/03/pxe/</link><pubDate>Tue, 29 Mar 2016 00:00:00 +0000</pubDate><guid>https://silentkeeping.github.io/2016/03/pxe/</guid><description>PXE介绍 # PXE： Preboot Excution Environment，由Intel公司研发，可以使没有任何操作系统的主机能够基于网络完成系统的安装工作，实现服务器的自动化安装系统
+PXE工作原理 # Client向PXE Server上的DHCP发送IP地址请求消息，DHCP检测Client是否合法（主要是检测Client的网卡MAC地址），如果合法则返回Client的IP地址，同时将启动文件pxelinux.0的位置信息一并传送给Client Client向PXE Server上的TFTP发送获取pxelinux.0请求消息， TFTP接收到消息之后再向Client发送pxelinux.0大小信息，试探Client是否满意，当TFTP收到Client发回的同意大小信息之后，正式向Client发送pxelinux.0 Client执行接收到的pxelinux.0文件 Client向TFTP Server发送针对本机的配置信息文件（在TFTP 服务的pxelinux.cfg目录下）， TFTP将配置文件发回Client，继而Client根据配置文件执行后续操作 Client向TFTP发送Linux内核请求信息， TFTP接收到消息之后将内核文件发送给Client Client向TFTP发送根文件请求信息， TFTP接收到消息之后返回Linux根文件系统 Client启动Linux内核 Client下载安装源文件，读取自动化安装脚本 PXE Server 的配置 # 1. DHCP服务的配置 # ​ 安装包：dhcp-4.</description></item><item><title>yum客户端的配置及yum命令用法</title><link>https://silentkeeping.github.io/2016/03/yum/</link><pubDate>Wed, 02 Mar 2016 00:00:00 +0000</pubDate><guid>https://silentkeeping.github.io/2016/03/yum/</guid><description>什么是yum # 我们在Linux系统上安装处理软件，一般是使用RPM，它是通过预先编译完成并且把软件打包为RPM文件格式后，再加以安装的一种方式，使用者只要拿到这个打包好的软件，然后将里头的文件放置到应该摆放的目录，这样就完成了安装。但是，由于有些软件是有依赖于其他软件的，当你要安装某个RPM类型的软件时，RPM会检验RPM软件数据库，它所依赖的相关软件包是否都已存在，如果没有检索到，那么这个RPM文件默认就不能安装。甚至是有些包之间还会存在循环依赖，这时RPM就不能快速有效的进行软件安装了。 对于RPM的上述局限性，yum的出现就解决了包之间的依赖性的问题。文章前面提到了，RPM把软件依赖关系储存在本地数据库里，那我们在安装软件的时候，如果先到数据库里找到所有依赖包的列表，再检索哪些已经安装到本地，然后把剩下没安装的一起安装，这样就可以解决包依赖性的问题了，这就是yum机制的由来
+yum的运作流程 # 各版本发行商都会释放出软件并放置于yum服务器上，所以yum服务器储存有我们各种所需的软件。参考下图，yum服务器不仅存储了各种RPM包，还有包的相关的元数据文件（放置于特定目录repodata下），前面提到的包的依赖性关系就储存在元数据文件中。這些文件与RPM软件包所在的本地或网络位置就被称为yum仓库(yum repo)。当用户端有软件安装或升级的需求时，用户端会访问yum服务器下载或更新RPM软件列表并存在本机缓存列表中，然后通过缓存列表与本地RPM数据库相比对，筛选出缺少哪些RPM软件包并根据yum仓库储存的路径下载（可以是本地，也可以是网络），最后通过RPM机制一并进行安装。 如何配置yum客户端 # yum本身的配置文件，主要指向仓库的位置以及相关的各种配置信息。
+主配置文件 # /etc/yum.conf：为所有仓库提供公共配置
+各仓库指向的定义 # /etc/yum.repos.d/*.repo：为仓库的指向提供配置
+* [repositoryID] #仓库的名字，具有唯一性，标识repo的指向 * name=Some name for this repository #仓库描述信息 * baseurl=url://path/to/repository/ #指明repo的访问路径，通常为一个文件服务器上输出的某repo #文件服务器类型 http://SEVER/PATH/TO/REPOSITORY https://SEVER/PATH/TO/REPOSITORY ftp://SEVER/PATH/TO/REPOSITORY file:///PATH/TO/REPOSITORY * enabled={1|0} #此仓库是否可被使用 * gpgcheck={1|0} #是否对RPM包做检验 * gpgkey=url://path/to/keyfile/ #指明gpgkey文件路径 * enablegroups={1|0} #是否启用包组 * failovermethod={roundrobin|priority} #设置baseurl有多个时的优先级 roundrobin：随机挑选，默认值 priority:按顺序访问 * cost= #指明仓库的访问开销，默认为1000 创建新的配置文件 # 按照以上方式，我们就在/etc/yum.</description></item><item><title>如何实现rsyslog的远程日志存储</title><link>https://silentkeeping.github.io/2016/01/rsyslog-collect/</link><pubDate>Thu, 14 Jan 2016 00:00:00 +0000</pubDate><guid>https://silentkeeping.github.io/2016/01/rsyslog-collect/</guid><description>&lt;h3 class="relative group">远程日志服务器的实现
+&lt;div id="远程日志服务器的实现" class="anchor">&lt;/div>
+&lt;span
+class="absolute top-0 w-6 transition-opacity opacity-0 ltr:-left-6 rtl:-right-6 not-prose group-hover:opacity-100">
+&lt;a class="group-hover:text-primary-300 dark:group-hover:text-neutral-700"
+style="text-decoration-line: none !important;" href="#%e8%bf%9c%e7%a8%8b%e6%97%a5%e5%bf%97%e6%9c%8d%e5%8a%a1%e5%99%a8%e7%9a%84%e5%ae%9e%e7%8e%b0" aria-label="锚点">#&lt;/a>
+&lt;/span>
+&lt;/h3>
+&lt;ul>
+&lt;li>rsyslog客户端：CentOS 7 ; 192.168.196.168&lt;/li>
+&lt;li>rsyslog服务端：CentOS 6 ; 192.168.196.155&lt;/li>
+&lt;/ul>
+&lt;ol>
+&lt;li>&lt;code>/etc/rsyslog.conf&lt;/code> 客户端配置&lt;/li>
+&lt;/ol></description></item><item><title>逻辑卷LVM的实现</title><link>https://silentkeeping.github.io/2015/11/logical-volume/</link><pubDate>Sat, 14 Nov 2015 00:00:00 +0000</pubDate><guid>https://silentkeeping.github.io/2015/11/logical-volume/</guid><description>什么是LVM # LVM(Logical Volume Manager 逻辑卷管理)可以实现把多个实体硬盘分区整合在一起，当作一个硬盘来重新操作处理。最重要的是LVM不像传统分区一旦确定分区大小就不能再调整，它允许我们弹性的调整分区及文件系统容量
+通过几道练习题来说明LVM的实现 # 1、创建一个至少有两个PV组成的大小为20G的名为testvg的VG；要求PE大小为16MB, 而后在卷组中创建大小为5G的逻辑卷testlv；挂载至/users目录
+2、新建用户 archlinux，要求其家目录为/users/archlinux，而后su切换至archlinux用户，复制/etc/pam.d目录至自己的家目录
+3、扩展testlv至7G，要求archlinux用户的文件不能丢失
+4、收缩testlv至3G，要求archlinux用户的文件不能丢失5、对testlv创建快照，并尝试基于快照备份数据，验正快照的功能
+题1: PV、VG、LV的创建 # [root@centos6 ~]fdisk /dev/sda &amp;lt;--调整分区sda1 id为8e [root@centos6 ~]fdisk /dev/sdc &amp;lt;--调整分区sdc1 id为8e [root@centos6 ~]#pvcreate /dev/sd{a6,c1} &amp;lt;--指定分区为PV Physical volume &amp;#34;/dev/sda6&amp;#34; successfully created Physical volume &amp;#34;/dev/sdc1&amp;#34; successfully created [root@centos6 ~]#vgcreate -s 16M vg0 /dev/sd{a6,c1} &amp;lt;--创建vg；-s 指定PE大小 Volume group &amp;#34;vg0&amp;#34; successfully created [root@centos6 ~]#lvcreate -n testlv -L 5G vg0 &amp;lt;--创建lv; -n 指定lv名字；-L 按照容量指定lv大小[MGT]参考1） Wiping software RAID md superblock on /dev/vg0/testlv.</description></item><item><title>/etc/fstab及/boot分区文件恢复</title><link>https://silentkeeping.github.io/2015/10/partion-recover/</link><pubDate>Tue, 06 Oct 2015 00:00:00 +0000</pubDate><guid>https://silentkeeping.github.io/2015/10/partion-recover/</guid><description>​ 以centos6为例，/boot目录下有最为关键的开机启动所必须的内核文件、根文件系统驱动文件已经引导加载程序(bootloader)grub。当我们清空此文件夹之后关机，机器就不能正常启动了，这种情况下，可以借助光盘启动进入救援模式解决。具体步骤如下：
+开机进入救援模式 # 这里不像正常情况下，显示根文件系统挂载在/mnt/sysimage目录，而是提示找不到分区。这是因为我把/etc/fstab文件删除了，即使救援模式下，系统启动也不会搜索挂载根目录了，此时我们只能查看本主机各个分区情况，尝试找到根目录并手动挂载。
+手动挂载根目录，恢复/etc/fstab文件 # 进入shell模式下，根据分区情况可以看出，为了使系统容量具有拓展性，根系统基于逻辑卷的。但是通过lvdisplay命令可以看出，逻辑卷的状态是not available，这是因为LVM及software Raid设备是在运行系统初始化脚本/etc/rc.d/rc.sysinit时才被激活。很显然，在本例中bootLoader都已经被损坏，lvm无法被自动激活，使用命令#vgchange -ay 手动激活
+激活lvm之后，通过逻辑卷名字看出根文件系统应该在dev/vg_www/lv_root逻辑卷设备上，挂载该设备到/mnt/tmp目录。参考下图ls结果可知，此设备确实是根文件系统，创建fstab文件并重启
+重启，进入救援模式，修复/boot # 1)如下图所示，救援模式下已显示找到根文件系统，并挂载在/mnt/sysimage目录。进入shell模式，在/boot目录下安装kernel和grub
+2)grub.conf文件可以在上述shell下直接编辑修复也可以在进入开机菜单时使用grub交互程序输入
+重启机器，系统直接进入grub交互界面，如下图所示
+分别输入kernel参数和伪根文件系统路径，并启动
+指定kernel和initrd的文件路径根为/boot所在的设备及分区;(hd0,0)代表着第一个硬盘中第一个分区
+重启之后，可以正常登陆了 # 登陆之后再去完善/etc/fstab文件及grub.conf文件，机器就恢复成功了。</description></item></channel></rss>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>LVS on FeixiangFu</title><link>https://silentkeeping.github.io/series/lvs/</link><description>Recent content in LVS on FeixiangFu</description><generator>Hugo -- gohugo.io</generator><language>zh-ch</language><copyright>© 2023 FeixiangFu</copyright><lastBuildDate>Fri, 03 Jun 2016 00:00:00 +0000</lastBuildDate><atom:link href="https://silentkeeping.github.io/series/lvs/index.xml" rel="self" type="application/rss+xml"/><item><title>LVS DR 负载均衡实现</title><link>https://silentkeeping.github.io/2016/06/lvs-dr/</link><pubDate>Fri, 03 Jun 2016 00:00:00 +0000</pubDate><guid>https://silentkeeping.github.io/2016/06/lvs-dr/</guid><description>上篇关于 LVS-nat 模式的负载均衡实现博客中已经简单介绍了有关LVS集群的概念、四种IP负载均衡技术以及十种调度算法，本文将详细介绍LVS-DR(直接路由)模式的实现
+​ LVS-DR：Direct Routing, LVS默认模式, 通过为请求报文重新封装一个MAC首部进行转发，源MAC是DIP所在的接口的MAC，目标MAC是某挑选出的RS的RIP所在接口的MAC地址；源IP/PORT，以及目标IP/PORT均保持不变。请求报文同样要经由 Director，但与nat不同的是DR模式下的响应报文不经由 Director，而由RS直接发往Client
+DR模式调度流程 # 网络传输时，经过路由转发，会修改源mac为该转发路由的mac
+Director和各RS都配置有VIP
+确保RS响应报文中源IP为VIP，进而走直接路由返回client
+解决地址冲突, 确保前端路由器将目标IP为VIP的请求报文发往Director,而不是RS，三种方法：
+在前端网关做静态绑定VIP和Director的MAC地址
+在RS上使用arptables工具
+arptables -A IN -d VIP -j DROP arptables -A OUT -s VIP -j mangle &amp;ndash;mangle -ip -s RIP</description></item><item><title>LVS NAT 负载均衡的实现</title><link>https://silentkeeping.github.io/2016/05/lvs-nat/</link><pubDate>Mon, 16 May 2016 00:00:00 +0000</pubDate><guid>https://silentkeeping.github.io/2016/05/lvs-nat/</guid><description>什么是LVS # LVS: Linux Virtual Server，即Linux虚拟服务器，是一个虚拟的服务器集群系统
+LVS集群由VS(Virtual Server)负责调度,RS(Real Server)负责真正提供服务。VS根据请求报文的目标IP和目标协议及端口将其调度转发至某RS，根据调度算法来挑选RS，实现负载均衡，而且调度器自动屏蔽掉服务器的故障，从而将一组服务器构成一个高性能的、高可用的虚拟服务器。 lvs集群的类型：
+lvs-nat：多目标IP的DNAT(Network Address Translation)，通过将请求报文中的目标地址和目标端口修改为某挑出的RS的RIP和PORT实现转发&amp;mdash;&amp;ndash;本文将对nat模式及其实现做详细解释 lvs-dr：Direct Routing, LVS默认模式, 通过为请求报文重新封装一个MAC首部进行转发，源MAC是DIP所在的接口的MAC，目标MAC是某挑选出的RS的RIP所在接口的MAC地址；源IP/PORT，以及目标IP/PORT均保持不变 lvs-tun：不修改请求报文的IP首部, 在原请求IP报文之外封装一个IP首部, 将报文发往挑选出的目标RS,RS直接响应给客户端 lvs-fullnat：通过同时修改请求报文的源IP地址和目标IP地址进行转发,此类型kernel默认不支持 ipvsadm与ipvs：
+ipvsadm是用户空间的命令行工具，规则管理器，实现用户管理集群服务及RealServer 管理集群服务：增、改、删 增、改：
+ipvsadm -A|E -t|u|f service-address [-s scheduler] [-p [timeout]]</description></item></channel></rss>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>rsyslog on FeixiangFu</title><link>https://silentkeeping.github.io/t/rsyslog/</link><description>Recent content in rsyslog on FeixiangFu</description><generator>Hugo -- gohugo.io</generator><language>zh-ch</language><copyright>© 2023 FeixiangFu</copyright><lastBuildDate>Thu, 14 Jan 2016 00:00:00 +0000</lastBuildDate><atom:link href="https://silentkeeping.github.io/t/rsyslog/index.xml" rel="self" type="application/rss+xml"/><item><title>如何实现rsyslog的远程日志存储</title><link>https://silentkeeping.github.io/2016/01/rsyslog-collect/</link><pubDate>Thu, 14 Jan 2016 00:00:00 +0000</pubDate><guid>https://silentkeeping.github.io/2016/01/rsyslog-collect/</guid><description>&lt;h3 class="relative group">远程日志服务器的实现
+&lt;div id="远程日志服务器的实现" class="anchor">&lt;/div>
+&lt;span
+class="absolute top-0 w-6 transition-opacity opacity-0 ltr:-left-6 rtl:-right-6 not-prose group-hover:opacity-100">
+&lt;a class="group-hover:text-primary-300 dark:group-hover:text-neutral-700"
+style="text-decoration-line: none !important;" href="#%e8%bf%9c%e7%a8%8b%e6%97%a5%e5%bf%97%e6%9c%8d%e5%8a%a1%e5%99%a8%e7%9a%84%e5%ae%9e%e7%8e%b0" aria-label="锚点">#&lt;/a>
+&lt;/span>
+&lt;/h3>
+&lt;ul>
+&lt;li>rsyslog客户端：CentOS 7 ; 192.168.196.168&lt;/li>
+&lt;li>rsyslog服务端：CentOS 6 ; 192.168.196.155&lt;/li>
+&lt;/ul>
+&lt;ol>
+&lt;li>&lt;code>/etc/rsyslog.conf&lt;/code> 客户端配置&lt;/li>
+&lt;/ol></description></item></channel></rss>

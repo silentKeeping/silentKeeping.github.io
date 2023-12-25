@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>keepalived on FeixiangFu</title><link>https://silentkeeping.github.io/t/keepalived/</link><description>Recent content in keepalived on FeixiangFu</description><generator>Hugo -- gohugo.io</generator><language>zh-ch</language><copyright>© 2023 FeixiangFu</copyright><lastBuildDate>Wed, 20 Jul 2016 00:00:00 +0000</lastBuildDate><atom:link href="https://silentkeeping.github.io/t/keepalived/index.xml" rel="self" type="application/rss+xml"/><item><title>Keepalived+nginx LB高可用集群实现</title><link>https://silentkeeping.github.io/2016/07/keepalived-nginx/</link><pubDate>Wed, 20 Jul 2016 00:00:00 +0000</pubDate><guid>https://silentkeeping.github.io/2016/07/keepalived-nginx/</guid><description>&lt;h3 class="relative group">keepalived简介
+&lt;div id="keepalived简介" class="anchor">&lt;/div>
+&lt;span
+class="absolute top-0 w-6 transition-opacity opacity-0 ltr:-left-6 rtl:-right-6 not-prose group-hover:opacity-100">
+&lt;a class="group-hover:text-primary-300 dark:group-hover:text-neutral-700"
+style="text-decoration-line: none !important;" href="#keepalived%e7%ae%80%e4%bb%8b" aria-label="锚点">#&lt;/a>
+&lt;/span>
+&lt;/h3>
+&lt;p>keepalived是一款解决负载均衡(调度器)的高可用问题的软件，可以实现负载均衡器的故障转移(failover)，原生设计的目的为了高可用ipvs服务，后来增加了脚本调用接口，使其一定程度上具有了管控服务进程的功能，基于此接口也可以支持nginx、haproxy负载均衡的高可用。keepalived是VRRP协议的软件实现，也基于VRRP协议完成地址流动，那什么是VRRP协议呢？&lt;/p></description></item></channel></rss>
