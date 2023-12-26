@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>etcd on FeixiangFu</title><link>https://fufeixiang.com/tags/etcd/</link><description>Recent content in etcd on FeixiangFu</description><generator>Hugo -- gohugo.io</generator><language>zh-ch</language><copyright>© 2023 FeixiangFu</copyright><lastBuildDate>Thu, 22 Aug 2019 00:00:00 +0000</lastBuildDate><atom:link href="https://fufeixiang.com/tags/etcd/index.xml" rel="self" type="application/rss+xml"/><item><title>k8s1.14.6集群搭建之ETCD集群部署</title><link>https://fufeixiang.com/2019/08/k8s1.14.6-etcd/</link><pubDate>Thu, 22 Aug 2019 00:00:00 +0000</pubDate><guid>https://fufeixiang.com/2019/08/k8s1.14.6-etcd/</guid><description>&lt;h4 class="relative group">1. 创建自签名CA及相关证书
+&lt;div id="1-创建自签名ca及相关证书" class="anchor">&lt;/div>
+&lt;span
+class="absolute top-0 w-6 transition-opacity opacity-0 ltr:-left-6 rtl:-right-6 not-prose group-hover:opacity-100">
+&lt;a class="group-hover:text-primary-300 dark:group-hover:text-neutral-700"
+style="text-decoration-line: none !important;" href="#1-%e5%88%9b%e5%bb%ba%e8%87%aa%e7%ad%be%e5%90%8dca%e5%8f%8a%e7%9b%b8%e5%85%b3%e8%af%81%e4%b9%a6" aria-label="锚点">#&lt;/a>
+&lt;/span>
+&lt;/h4>
+&lt;p>1.1 创建自签名CA&lt;/p></description></item></channel></rss>
