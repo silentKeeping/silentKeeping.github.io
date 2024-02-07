@@ -1,0 +1,532 @@
+<!doctype html><html lang=zh-ch dir=ltr class=scroll-smooth data-default-appearance=light data-auto-appearance=true><head><meta charset=utf-8><meta http-equiv=content-language content="zh-ch"><meta name=viewport content="width=device-width,initial-scale=1"><meta http-equiv=X-UA-Compatible content="ie=edge"><title>httpd+svn服务器部署 &#183; FeixiangFu</title>
+<meta name=title content="httpd+svn服务器部署 &#183; FeixiangFu"><meta name=description content="打工人:tree:"><meta name=keywords content="svn,httpd,openssl,"><link rel=canonical href=https://fufeixiang.com/2020/05/httpd-svn/><link type=text/css rel=stylesheet href=/css/main.bundle.min.2b8b793b5350f23c027e845b237b267c85c08a4a6128dfad2b43b25f354c42eb4629bb7f88b75e09b52056c28e0d057594a8185bd540bd7bece42b3be6399cdf.css integrity="sha512-K4t5O1NQ8jwCfoRbI3smfIXAikphKN+tK0OyXzVMQutGKbt/iLdeCbUgVsKODQV1lKgYW9VAvXvs5Cs75jmc3w=="><script type=text/javascript src=/js/appearance.min.516a16745bea5a9bd011138d254cc0fd3973cd55ce6e15f3dec763e7c7c2c7448f8fe7b54cca811cb821b0c7e12cd161caace1dd794ac3d34d40937cbcc9ee12.js integrity="sha512-UWoWdFvqWpvQERONJUzA/TlzzVXObhXz3sdj58fCx0SPj+e1TMqBHLghsMfhLNFhyqzh3XlKw9NNQJN8vMnuEg=="></script><script defer type=text/javascript id=script-bundle src=/js/main.bundle.min.82867bf47a612d7462e3555f4fccb5ab28e2bd4b18c37131afdf5ba4d21396ab08ac679cae8e0ae71b26835b657ce022e7aafd352b1ecf7ce672512e5cb25882.js integrity="sha512-goZ79HphLXRi41VfT8y1qyjivUsYw3Exr99bpNITlqsIrGecro4K5xsmg1tlfOAi56r9NSsez3zmclEuXLJYgg==" data-copy data-copied></script><script src=/js/zoom.min.js></script><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><meta property="og:title" content="httpd+svn服务器部署"><meta property="og:description" content="本文主要介绍https双向认证httpd + 用户Basic Authorization + svn的部署
+安装配置svn # [root@test] ~$ yum -y install subversion [root@test] ~$ mkdir /data/repos 创建一个仓库 myhub
+[root@test] repos$ svnadmin create /data/repos/myhub [root@test] repos$ cd /data/repos/myhub [root@test] myhub$ ls conf db format hooks locks README."><meta property="og:type" content="article"><meta property="og:url" content="https://fufeixiang.com/2020/05/httpd-svn/"><meta property="article:section" content="posts"><meta property="article:published_time" content="2020-05-19T00:00:00+00:00"><meta property="article:modified_time" content="2020-05-19T00:00:00+00:00"><meta name=twitter:card content="summary"><meta name=twitter:title content="httpd+svn服务器部署"><meta name=twitter:description content="本文主要介绍https双向认证httpd + 用户Basic Authorization + svn的部署
+安装配置svn # [root@test] ~$ yum -y install subversion [root@test] ~$ mkdir /data/repos 创建一个仓库 myhub
+[root@test] repos$ svnadmin create /data/repos/myhub [root@test] repos$ cd /data/repos/myhub [root@test] myhub$ ls conf db format hooks locks README."><script type=application/ld+json>[{"@context":"https://schema.org","@type":"Article","articleSection":"博客","name":"httpd\u002bsvn服务器部署","headline":"httpd\u002bsvn服务器部署","abstract":"本文主要介绍https双向认证httpd \u002b 用户Basic Authorization \u002b svn的部署\n安装配置svn # [root@test] ~$ yum -y install subversion [root@test] ~$ mkdir \/data\/repos 创建一个仓库 myhub\n[root@test] repos$ svnadmin create \/data\/repos\/myhub [root@test] repos$ cd \/data\/repos\/myhub [root@test] myhub$ ls conf db format hooks locks README.","inLanguage":"zh-ch","url":"https:\/\/fufeixiang.com\/2020\/05\/httpd-svn\/","author":{"@type":"Person","name":"FeixiangFu"},"copyrightYear":"2020","dateCreated":"2020-05-19T00:00:00\u002b00:00","datePublished":"2020-05-19T00:00:00\u002b00:00","dateModified":"2020-05-19T00:00:00\u002b00:00","keywords":["svn","httpd","openssl"],"mainEntityOfPage":"true","wordCount":"1737"}]</script><meta name=author content="FeixiangFu"><link href=https://github.com/silentKeeping/silentkeeping.github.io/tree/gh-pages rel=me><link href=/me rel=me><script src=/lib/jquery/jquery.slim.min.js integrity></script><script async src="https://www.googletagmanager.com/gtag/js?id=G-MYX6F2X0C9"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date),gtag("config","G-MYX6F2X0C9")</script><script>var _hmt=_hmt||[];(function(){var e,t=document.createElement("script");t.src="https://hm.baidu.com/hm.js?5ef66fe2eeef8523666aa97206334f5d",e=document.getElementsByTagName("script")[0],e.parentNode.insertBefore(t,e)})()</script><meta name=theme-color></head><body class="flex flex-col h-screen px-6 m-auto text-lg leading-7 max-w-7xl bg-neutral text-neutral-900 dark:bg-neutral-800 dark:text-neutral sm:px-14 md:px-24 lg:px-32"><div id=the-top class="absolute flex self-center"><a class="px-3 py-1 text-sm -translate-y-8 rounded-b-lg bg-primary-200 focus:translate-y-0 dark:bg-neutral-600" href=#main-content><span class="font-bold text-primary-600 ltr:pr-2 rtl:pl-2 dark:text-primary-400">&darr;</span></a></div><div class=min-h-[148px]></div><div class="fixed inset-x-0 pl-[24px] pr-[24px]" style=z-index:100><div id=menu-blur class="absolute opacity-0 inset-x-0 top-0 h-full single_hero_background nozoom backdrop-blur-2xl shadow-2xl"></div><div class="relative max-w-[64rem] ml-auto mr-auto"><div style=padding-left:0;padding-right:0;padding-top:2px;padding-bottom:3px class="main-menu flex items-center justify-between px-4 py-6 sm:px-6 md:justify-start space-x-3"><div><a href=/ class=flex><span class=sr-only>FeixiangFu</span>
+<img src=/img/avatar-logo_hu2551ff66a3dea2bebaba020a8603e044_243346_288x0_resize_box_3.png width=144 height=144 class="logo max-h-[5rem] max-w-[5rem] object-scale-down object-left nozoom" alt=FeixiangFu></a></div><div class="flex flex-1 items-center justify-between"><nav class="flex space-x-3"><a href=/ class="text-base font-medium text-gray-500 hover:text-gray-900">FeixiangFu</a></nav><nav class="hidden md:flex items-center space-x-5 md:ml-12 h-12"><a href=/posts/ class="flex items-center"><p class="text-base font-medium text-gray-500 hover:text-gray-900" title=博客>博客</p></a><a href=https://github.com/silentKeeping/silentkeeping.github.io/tree/gh-pages target=_blank class="flex items-center"><span><span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><path fill="currentcolor" d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6.0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6.0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3.0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1.0-6.2-.3-40.4-.3-61.4.0.0-70 15-84.7-29.8.0.0-11.4-29.1-27.8-36.6.0.0-22.9-15.7 1.6-15.4.0.0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5.0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9.0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4.0 33.7-.3 75.4-.3 83.6.0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6.0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9.0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg></span></span><p class="text-base font-medium text-gray-500 hover:text-gray-900" title></p></a><button id=search-button aria-label=Search class="text-base hover:text-primary-600 dark:hover:text-primary-400 h-12" title>
+<span class="relative block icon"><svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="search" class="svg-inline--fa fa-search fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentcolor" d="M505 442.7 405.3 343c-4.5-4.5-10.6-7-17-7H372c27.6-35.3 44-79.7 44-128C416 93.1 322.9.0 208 0S0 93.1.0 208s93.1 208 208 208c48.3.0 92.7-16.4 128-44v16.3c0 6.4 2.5 12.5 7 17l99.7 99.7c9.4 9.4 24.6 9.4 33.9.0l28.3-28.3c9.4-9.4 9.4-24.6.1-34zM208 336c-70.7.0-128-57.2-128-128 0-70.7 57.2-128 128-128 70.7.0 128 57.2 128 128 0 70.7-57.2 128-128 128z"/></svg></span></button><div class="ltr:mr-14 rtl:ml-14 cursor-pointer text-sm text-neutral-700 hover:text-primary-600 dark:text-neutral dark:hover:text-primary-400"><button id=appearance-switcher aria-label="Dark mode switcher" type=button><div class="flex items-center justify-center h-12 dark:hidden"><span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentcolor" d="M32 256C32 132.2 132.3 32 255.8 32c11.36.0 29.7 1.668 40.9 3.746 9.616 1.777 11.75 14.63 3.279 19.44C245 86.5 211.2 144.6 211.2 207.8c0 109.7 99.71 193 208.3 172.3 9.561-1.805 16.28 9.324 10.11 16.95C387.9 448.6 324.8 480 255.8 480 132.1 480 32 379.6 32 256z"/></svg></span></div><div class="items-center justify-center hidden h-12 dark:flex"><span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentcolor" d="M256 159.1c-53.02.0-95.1 42.98-95.1 95.1s41.2 96.9 95.1 96.9 95.1-42.98 95.1-95.1S309 159.1 256 159.1zM509.3 347l-63.2-91.9 63.15-91.01c6.332-9.125 1.104-21.74-9.826-23.72l-109-19.7-19.7-109c-1.975-10.93-14.59-16.16-23.72-9.824L256 65.89 164.1 2.736c-9.125-6.332-21.74-1.107-23.72 9.824L121.6 121.6 12.56 141.3C1.633 143.2-3.596 155.9 2.736 164.1L65.89 256 2.74 347.01c-6.332 9.125-1.105 21.74 9.824 23.72l109 19.7 19.7 109c1.975 10.93 14.59 16.16 23.72 9.824L256 446.1l91.01 63.15c9.127 6.334 21.75 1.107 23.72-9.822l19.7-109 109-19.7C510.4 368.8 515.6 356.1 509.3 347zM256 383.1c-70.69.0-127.1-57.31-127.1-127.1.0-70.69 57.31-127.1 127.1-127.1S383.1 186.2 383.1 256c0 70.7-56.4 127.1-127.1 127.1z"/></svg></span></div></button></div></nav><div class="flex md:hidden items-center space-x-5 md:ml-12"><span></span>
+<button id=search-button-mobile aria-label=Search class="text-base hover:text-primary-600 dark:hover:text-primary-400" title>
+<span class="relative block icon"><svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="search" class="svg-inline--fa fa-search fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentcolor" d="M505 442.7 405.3 343c-4.5-4.5-10.6-7-17-7H372c27.6-35.3 44-79.7 44-128C416 93.1 322.9.0 208 0S0 93.1.0 208s93.1 208 208 208c48.3.0 92.7-16.4 128-44v16.3c0 6.4 2.5 12.5 7 17l99.7 99.7c9.4 9.4 24.6 9.4 33.9.0l28.3-28.3c9.4-9.4 9.4-24.6.1-34zM208 336c-70.7.0-128-57.2-128-128 0-70.7 57.2-128 128-128 70.7.0 128 57.2 128 128 0 70.7-57.2 128-128 128z"/></svg>
+</span></button>
+<button id=appearance-switcher-mobile aria-label="Dark mode switcher" type=button style=margin-right:5px><div class="flex items-center justify-center h-12 dark:hidden"><span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentcolor" d="M32 256C32 132.2 132.3 32 255.8 32c11.36.0 29.7 1.668 40.9 3.746 9.616 1.777 11.75 14.63 3.279 19.44C245 86.5 211.2 144.6 211.2 207.8c0 109.7 99.71 193 208.3 172.3 9.561-1.805 16.28 9.324 10.11 16.95C387.9 448.6 324.8 480 255.8 480 132.1 480 32 379.6 32 256z"/></svg></span></div><div class="items-center justify-center hidden h-12 dark:flex"><span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentcolor" d="M256 159.1c-53.02.0-95.1 42.98-95.1 95.1s41.2 96.9 95.1 96.9 95.1-42.98 95.1-95.1S309 159.1 256 159.1zM509.3 347l-63.2-91.9 63.15-91.01c6.332-9.125 1.104-21.74-9.826-23.72l-109-19.7-19.7-109c-1.975-10.93-14.59-16.16-23.72-9.824L256 65.89 164.1 2.736c-9.125-6.332-21.74-1.107-23.72 9.824L121.6 121.6 12.56 141.3C1.633 143.2-3.596 155.9 2.736 164.1L65.89 256 2.74 347.01c-6.332 9.125-1.105 21.74 9.824 23.72l109 19.7 19.7 109c1.975 10.93 14.59 16.16 23.72 9.824L256 446.1l91.01 63.15c9.127 6.334 21.75 1.107 23.72-9.822l19.7-109 109-19.7C510.4 368.8 515.6 356.1 509.3 347zM256 383.1c-70.69.0-127.1-57.31-127.1-127.1.0-70.69 57.31-127.1 127.1-127.1S383.1 186.2 383.1 256c0 70.7-56.4 127.1-127.1 127.1z"/></svg></span></div></button></div></div><div class="-my-2 -mr-2 md:hidden"><label id=menu-button for=menu-controller class=block><input type=checkbox id=menu-controller class=hidden><div class="cursor-pointer hover:text-primary-600 dark:hover:text-primary-400"><span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path fill="currentcolor" d="M0 96C0 78.33 14.33 64 32 64H416c17.7.0 32 14.33 32 32 0 17.7-14.3 32-32 32H32C14.33 128 0 113.7.0 96zM0 256c0-17.7 14.33-32 32-32H416c17.7.0 32 14.3 32 32s-14.3 32-32 32H32c-17.67.0-32-14.3-32-32zM416 448H32c-17.67.0-32-14.3-32-32s14.33-32 32-32H416c17.7.0 32 14.3 32 32s-14.3 32-32 32z"/></svg></span></div><div id=menu-wrapper style=padding-top:5px class="fixed inset-0 z-30 invisible w-screen h-screen m-0 overflow-auto transition-opacity opacity-0 cursor-default bg-neutral-100/50 backdrop-blur-sm dark:bg-neutral-900/50"><ul class="flex space-y-2 mt-3 flex-col items-end w-full px-6 py-6 mx-auto overflow-visible list-none ltr:text-right rtl:text-left max-w-7xl"><li><span class="cursor-pointer inline-block align-text-bottom hover:text-primary-600 dark:hover:text-primary-400"><span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><path fill="currentcolor" d="M310.6 361.4c12.5 12.5 12.5 32.75.0 45.25C304.4 412.9 296.2 416 288 416s-16.38-3.125-22.62-9.375L160 301.3 54.63 406.6C48.38 412.9 40.19 416 32 416S15.63 412.9 9.375 406.6c-12.5-12.5-12.5-32.75.0-45.25l105.4-105.4L9.375 150.6c-12.5-12.5-12.5-32.75.0-45.25s32.75-12.5 45.25.0L160 210.8l105.4-105.4c12.5-12.5 32.75-12.5 45.25.0s12.5 32.75.0 45.25l-105.4 105.4L310.6 361.4z"/></svg></span></span></li><li class=mt-1><a href=/posts/ class="flex items-center"><p class="text-bg font-bg text-gray-500 hover:text-gray-900" title=博客>博客</p></a></li><li class=mt-1><a href=https://github.com/silentKeeping/silentkeeping.github.io/tree/gh-pages target=_blank class="flex items-center"><div><span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><path fill="currentcolor" d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6.0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6.0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3.0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1.0-6.2-.3-40.4-.3-61.4.0.0-70 15-84.7-29.8.0.0-11.4-29.1-27.8-36.6.0.0-22.9-15.7 1.6-15.4.0.0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5.0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9.0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4.0 33.7-.3 75.4-.3 83.6.0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6.0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9.0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg></span></div><p class="text-bg font-bg text-gray-500 hover:text-gray-900" title></p></a></li></ul></div></label></div></div><script>(function(){var e=$(".main-menu"),t=window.location.pathname;e.find('a[href="'+t+'"]').each(function(e,t){$(t).children("p").addClass("active")})})()</script></div></div><script>window.addEventListener("scroll",function(){var t=window.pageYOffset||document.documentElement.scrollTop||document.body.scrollTop||0,n=document.getElementById("menu-blur");n.style.opacity=t/300})</script><div class="relative flex flex-col grow"><main id=main-content class=grow><article><div id=hero class="h-[150px] md:h-[200px]"></div><div class="fixed inset-x-0 top-0 h-[800px] single_hero_background nozoom" style=background-image:url(/img/ocean_hu3d03a01dcc18bc5be0e67db3d8d209a6_5097493_1200x0_resize_q75_box.jpg)><div class="absolute inset-0 bg-gradient-to-t from-neutral dark:from-neutral-800 to-transparent mix-blend-normal"></div><div class="absolute inset-0 opacity-60 bg-gradient-to-t from-neutral dark:from-neutral-800 to-neutral-100 dark:to-neutral-800 mix-blend-normal"></div></div><div id=background-blur class="fixed opacity-0 inset-x-0 top-0 h-full single_hero_background nozoom backdrop-blur-2xl"></div><script>window.addEventListener("scroll",function(){var t=window.pageYOffset||document.documentElement.scrollTop||document.body.scrollTop||0,n=document.getElementById("background-blur");n.style.opacity=t/300})</script><header id=single_header class="mt-5 max-w-prose"><ol class="text-sm text-neutral-500 dark:text-neutral-400 print:hidden"><li class="inline hidden"><a class="hover:underline decoration-neutral-300 dark:underline-neutral-600" href=/>Welcome to feixiang's blog :tada:</a><span class="px-1 text-primary-500">/</span></li><li class=inline><a class="hover:underline decoration-neutral-300 dark:underline-neutral-600" href=/posts/>博客</a><span class="px-1 text-primary-500">/</span></li><li class="inline hidden"><a class="hover:underline decoration-neutral-300 dark:underline-neutral-600" href=/2020/05/httpd-svn/>httpd+svn服务器部署</a><span class="px-1 text-primary-500">/</span></li></ol><h1 class="mt-0 text-4xl font-extrabold text-neutral-900 dark:text-neutral">httpd+svn服务器部署</h1><div class="mt-1 mb-6 text-base text-neutral-500 dark:text-neutral-400 print:hidden"><div style=cursor:default class="flex flex-row flex-wrap items-center"><time datetime="2020-05-19 00:00:00 +0000 UTC">19 May 2020</time><span class="px-2 text-primary-500">&#183;</span><span>1737 字</span><span class="px-2 text-primary-500">&#183;</span><span title=预计阅读>9 分钟</span></div><div style=cursor:pointer class="flex flex-row flex-wrap items-center"></div><div style=cursor:pointer class="flex flex-row flex-wrap items-center"><span style=margin-top:.5rem class=mr-2 onclick='window.open("/tags/svn/","_self")'><span class=flex><span class="rounded-md border border-primary-400 px-1 py-[1px] text-xs font-normal text-primary-700 dark:border-primary-600 dark:text-primary-400">svn
+</span></span></span><span style=margin-top:.5rem class=mr-2 onclick='window.open("/tags/httpd/","_self")'><span class=flex><span class="rounded-md border border-primary-400 px-1 py-[1px] text-xs font-normal text-primary-700 dark:border-primary-600 dark:text-primary-400">httpd
+</span></span></span><span style=margin-top:.5rem class=mr-2 onclick='window.open("/tags/openssl/","_self")'><span class=flex><span class="rounded-md border border-primary-400 px-1 py-[1px] text-xs font-normal text-primary-700 dark:border-primary-600 dark:text-primary-400">openssl</span></span></span></div></div></header><section class="flex flex-col max-w-full mt-0 prose dark:prose-invert lg:flex-row"><div class="order-first sm:max-w-prose lg:ml-auto px-0 lg:order-last lg:max-w-xs ltr:lg:pl-8 rtl:lg:pr-8"><div class="toc ltr:pl-5 rtl:pr-5 print:hidden lg:sticky lg:top-[140px]"><details open class="mt-0 overflow-hidden rounded-lg ltr:-ml-5 ltr:pl-5 rtl:-mr-5 rtl:pr-5 hidden lg:block"><summary class="block py-1 text-lg font-semibold cursor-pointer bg-neutral-100 text-neutral-800 ltr:-ml-5 ltr:pl-5 rtl:-mr-5 rtl:pr-5 dark:bg-neutral-700 dark:text-neutral-100 lg:hidden"></summary><div class="min-w-[220px] py-2 border-dotted border-neutral-300 ltr:-ml-5 ltr:border-l ltr:pl-5 rtl:-mr-5 rtl:border-r rtl:pr-5 dark:border-neutral-600"><nav id=TableOfContents><ul><li><ul><li><a href=#安装配置svn>安装配置svn</a></li><li><a href=#httpd配置>httpd配置</a><ul><li><a href=#安装httpd及模块>安装httpd及模块</a></li><li><a href=#自签名ca根证书>自签名CA根证书</a></li><li><a href=#服务端证书生成>服务端证书生成</a><ul><li><a href=#openssl-x509签发>openssl x509签发</a></li><li><a href=#openssl-ca签发>openssl ca签发</a></li></ul></li><li><a href=#客户端证书生成>客户端证书生成</a></li><li><a href=#修改配置>修改配置</a></li></ul></li><li><a href=#svn客户端访问>svn客户端访问</a></li><li><a href=#客户端证书的吊销>客户端证书的吊销</a><ul><li><a href=#吊销旧证书>吊销旧证书</a></li><li><a href=#签发新证书>签发新证书</a></li></ul></li></ul></li></ul></nav></div></details><details class="mt-0 overflow-hidden rounded-lg ltr:-ml-5 ltr:pl-5 rtl:-mr-5 rtl:pr-5 lg:hidden"><summary class="py-1 text-lg font-semibold cursor-pointer bg-neutral-100 text-neutral-800 ltr:-ml-5 ltr:pl-5 rtl:-mr-5 rtl:pr-5 dark:bg-neutral-700 dark:text-neutral-100 lg:hidden"></summary><div class="py-2 border-dotted border-neutral-300 ltr:-ml-5 ltr:border-l ltr:pl-5 rtl:-mr-5 rtl:border-r rtl:pr-5 dark:border-neutral-600"><nav id=TableOfContents><ul><li><ul><li><a href=#安装配置svn>安装配置svn</a></li><li><a href=#httpd配置>httpd配置</a><ul><li><a href=#安装httpd及模块>安装httpd及模块</a></li><li><a href=#自签名ca根证书>自签名CA根证书</a></li><li><a href=#服务端证书生成>服务端证书生成</a><ul><li><a href=#openssl-x509签发>openssl x509签发</a></li><li><a href=#openssl-ca签发>openssl ca签发</a></li></ul></li><li><a href=#客户端证书生成>客户端证书生成</a></li><li><a href=#修改配置>修改配置</a></li></ul></li><li><a href=#svn客户端访问>svn客户端访问</a></li><li><a href=#客户端证书的吊销>客户端证书的吊销</a><ul><li><a href=#吊销旧证书>吊销旧证书</a></li><li><a href=#签发新证书>签发新证书</a></li></ul></li></ul></li></ul></nav></div></details><script>(function(){var t,e=$("#TableOfContents");if(e.length>0){t=$(window);function n(){var s,o=t.scrollTop(),i=$(".anchor"),n="";if(i.each(function(e,t){t=$(t),t.offset().top-$(window).height()/3<=o&&(n=t.attr("id"))}),s=e.find("a.active"),s.length==1&&s.eq(0).attr("href")=="#"+n)return!0;s.each(function(e,t){$(t).removeClass("active")}),e.find('a[href="#'+n+'"]').addClass("active"),e.find('a[href="#'+n+'"]').parentsUntil("#TableOfContents").each(function(e,t){$(t).children("a").parents("ul").show()})}t.on("scroll",n),$(document).ready(function(){n()})}})()</script></div></div><div class="min-w-0 min-h-0 max-w-fit"><div class="max-w-prose mb-20"><p>本文主要介绍https双向认证httpd + 用户Basic Authorization + svn的部署</p><h3 class="relative group">安装配置svn<div id=安装配置svn class=anchor></div><span class="absolute top-0 w-6 transition-opacity opacity-0 ltr:-left-6 rtl:-right-6 not-prose group-hover:opacity-100"><a class="group-hover:text-primary-300 dark:group-hover:text-neutral-700" style=text-decoration-line:none!important href=#%e5%ae%89%e8%a3%85%e9%85%8d%e7%bd%aesvn aria-label=锚点>#</a></span></h3><div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> ~$ yum -y install subversion
+</span></span><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> ~$ mkdir /data/repos
+</span></span></code></pre></div><p>创建一个仓库 <code>myhub</code></p><div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> repos$ svnadmin create /data/repos/myhub
+</span></span><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> repos$ <span class=nb>cd</span> /data/repos/myhub
+</span></span><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> myhub$ ls
+</span></span><span class=line><span class=cl>conf  db  format  hooks  locks  README.txt
+</span></span></code></pre></div><p>配置svn</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> myhub$ <span class=nb>cd</span> conf/
+</span></span><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> conf$ ls
+</span></span><span class=line><span class=cl>authz  passwd  svnserve.conf
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> conf$ grep -v <span class=s2>&#34;^#\|^</span>$<span class=s2>&#34;</span> svnserve.conf
+</span></span><span class=line><span class=cl><span class=o>[</span>general<span class=o>]</span>
+</span></span><span class=line><span class=cl>anon-access <span class=o>=</span> none
+</span></span><span class=line><span class=cl>auth-access <span class=o>=</span> write
+</span></span><span class=line><span class=cl>password-db <span class=o>=</span> httpdPasswd
+</span></span><span class=line><span class=cl>authz-db <span class=o>=</span> authz
+</span></span><span class=line><span class=cl><span class=nv>realm</span> <span class=o>=</span> myhub
+</span></span><span class=line><span class=cl><span class=o>[</span>sasl<span class=o>]</span>
+</span></span></code></pre></div><ul><li>anon-access: 匿名用户访问仓库的权限，取值范围为 &ldquo;write&rdquo;,&ldquo;read&rdquo;,&ldquo;none&rdquo;</li><li>auth-access：认证用户访问仓库的权限，取值范围为 &ldquo;write&rdquo;,&ldquo;read&rdquo;,&ldquo;none&rdquo;</li><li>password-db: 用户认证密码库文件</li><li>authz-db: 基于路径的访问权限控制的规则库文件</li><li>realm: 登录svn时提示的认证域名称，如果两个仓库使用相同的认证域，那么认证密码库文件应该一致，反之亦然</li></ul><p>配置lisa用户有读写权限，并创建认证密码库文件</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> conf$  grep -v <span class=s2>&#34;^#\|^</span>$<span class=s2>&#34;</span> authz
+</span></span><span class=line><span class=cl><span class=o>[</span>aliases<span class=o>]</span>
+</span></span><span class=line><span class=cl><span class=o>[</span>groups<span class=o>]</span>
+</span></span><span class=line><span class=cl><span class=o>[</span>/<span class=o>]</span>
+</span></span><span class=line><span class=cl><span class=nv>lisa</span> <span class=o>=</span> rw
+</span></span><span class=line><span class=cl><span class=o>[</span>myhub:/<span class=o>]</span>
+</span></span><span class=line><span class=cl><span class=nv>lisa</span> <span class=o>=</span> rw
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> conf$ htpasswd -c -m httpdPasswd lisa
+</span></span><span class=line><span class=cl>New password:
+</span></span><span class=line><span class=cl>Re-type new password:
+</span></span><span class=line><span class=cl>Adding password <span class=k>for</span> user lisa
+</span></span></code></pre></div><p>启动svn</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> conf$ cat /etc/sysconfig/svnserve
+</span></span><span class=line><span class=cl><span class=c1># OPTIONS is used to pass command-line arguments to svnserve.</span>
+</span></span><span class=line><span class=cl><span class=c1>#</span>
+</span></span><span class=line><span class=cl><span class=c1># Specify the repository location in -r parameter:</span>
+</span></span><span class=line><span class=cl><span class=nv>OPTIONS</span><span class=o>=</span><span class=s2>&#34;-r /data/repos --listen-host 127.0.0.1 --listen-port 3690&#34;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> conf$ systemctl start svnserve
+</span></span></code></pre></div><h3 class="relative group">httpd配置<div id=httpd配置 class=anchor></div><span class="absolute top-0 w-6 transition-opacity opacity-0 ltr:-left-6 rtl:-right-6 not-prose group-hover:opacity-100"><a class="group-hover:text-primary-300 dark:group-hover:text-neutral-700" style=text-decoration-line:none!important href=#httpd%e9%85%8d%e7%bd%ae aria-label=锚点>#</a></span></h3><h4 class="relative group">安装httpd及模块<div id=安装httpd及模块 class=anchor></div><span class="absolute top-0 w-6 transition-opacity opacity-0 ltr:-left-6 rtl:-right-6 not-prose group-hover:opacity-100"><a class="group-hover:text-primary-300 dark:group-hover:text-neutral-700" style=text-decoration-line:none!important href=#%e5%ae%89%e8%a3%85httpd%e5%8f%8a%e6%a8%a1%e5%9d%97 aria-label=锚点>#</a></span></h4><div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> ~$ yum install -y httpd mod_ssl mod_dav_svn
+</span></span><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> ~$ httpd -t -D DUMP_MODULES<span class=p>|</span>grep -E <span class=s2>&#34;ssl|svn&#34;</span>
+</span></span><span class=line><span class=cl> ssl_module <span class=o>(</span>shared<span class=o>)</span>
+</span></span><span class=line><span class=cl> dav_svn_module <span class=o>(</span>shared<span class=o>)</span>
+</span></span><span class=line><span class=cl> authz_svn_module <span class=o>(</span>shared<span class=o>)</span>
+</span></span></code></pre></div><h4 class="relative group">自签名CA根证书<div id=自签名ca根证书 class=anchor></div><span class="absolute top-0 w-6 transition-opacity opacity-0 ltr:-left-6 rtl:-right-6 not-prose group-hover:opacity-100"><a class="group-hover:text-primary-300 dark:group-hover:text-neutral-700" style=text-decoration-line:none!important href=#%e8%87%aa%e7%ad%be%e5%90%8dca%e6%a0%b9%e8%af%81%e4%b9%a6 aria-label=锚点>#</a></span></h4><div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> cert$ <span class=nb>pwd</span>
+</span></span><span class=line><span class=cl>/data/cert
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1># 创建CA根证书私钥</span>
+</span></span><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> cert$ openssl genrsa -out root_ca.key <span class=m>2048</span>
+</span></span><span class=line><span class=cl>Generating RSA private key, <span class=m>2048</span> bit long modulus
+</span></span><span class=line><span class=cl>.....................+++
+</span></span><span class=line><span class=cl>.+++
+</span></span><span class=line><span class=cl>e is <span class=m>65537</span> <span class=o>(</span>0x10001<span class=o>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> cert$ cat openssl.cnf
+</span></span><span class=line><span class=cl><span class=o>[</span> req <span class=o>]</span>
+</span></span><span class=line><span class=cl><span class=c1># 证书主体的各属性信息使用的section配置，如通用名(CN)、组织单位(OU)</span>
+</span></span><span class=line><span class=cl><span class=nv>distinguished_name</span> <span class=o>=</span> req_distinguished_name
+</span></span><span class=line><span class=cl><span class=c1># 创建自签名证书请求时,使用扩展section配置</span>
+</span></span><span class=line><span class=cl><span class=nv>x509_extensions</span>	<span class=o>=</span> v3_ca
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=o>[</span>req_distinguished_name<span class=o>]</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=o>[</span>v3_ca<span class=o>]</span>
+</span></span><span class=line><span class=cl><span class=nv>subjectKeyIdentifier</span><span class=o>=</span><span class=nb>hash</span>
+</span></span><span class=line><span class=cl><span class=nv>authorityKeyIdentifier</span><span class=o>=</span>keyid:always,issuer
+</span></span><span class=line><span class=cl><span class=c1># basicConstraints 指证书的基本约束(基本限制)扩展字段</span>
+</span></span><span class=line><span class=cl><span class=c1># 该证书具备签发其他证书的能力,可以作为CA证书使用</span>
+</span></span><span class=line><span class=cl><span class=nv>basicConstraints</span> <span class=o>=</span> CA:true
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1># X509证书签发时使用的v3扩展section配置，For Server</span>
+</span></span><span class=line><span class=cl><span class=o>[</span> v3_req <span class=o>]</span>
+</span></span><span class=line><span class=cl><span class=nv>basicConstraints</span> <span class=o>=</span> CA:FALSE
+</span></span><span class=line><span class=cl><span class=nv>keyUsage</span> <span class=o>=</span> nonRepudiation, digitalSignature, keyEncipherment
+</span></span><span class=line><span class=cl><span class=c1># 证书主体CN别名使用的section配置</span>
+</span></span><span class=line><span class=cl><span class=nv>subjectAltName</span> <span class=o>=</span> @mysvn
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=o>[</span> mysvn <span class=o>]</span>
+</span></span><span class=line><span class=cl>DNS.1 <span class=o>=</span> ffu.com
+</span></span><span class=line><span class=cl>IP.1 <span class=o>=</span> 192.168.83.127
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1># X509证书签发时使用的扩展section配置，For Client</span>
+</span></span><span class=line><span class=cl><span class=o>[</span> usr_cert <span class=o>]</span>
+</span></span><span class=line><span class=cl><span class=nv>basicConstraints</span><span class=o>=</span>CA:true
+</span></span><span class=line><span class=cl><span class=nv>keyUsage</span> <span class=o>=</span> nonRepudiation, digitalSignature, keyEncipherment
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1># 创建CA根证书</span>
+</span></span><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> cert$ openssl req -x509 -new -nodes -key root_ca.key -subj <span class=s2>&#34;/CN=FFU ROOT CA&#34;</span> -days <span class=m>36500</span>  -config openssl.cnf  -out root_ca.crt
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> cert$  openssl x509 -in root_ca.crt -noout -text -certopt no_validity,no_sigdump,no_pubkey,no_serial
+</span></span><span class=line><span class=cl>Certificate:
+</span></span><span class=line><span class=cl>    Data:
+</span></span><span class=line><span class=cl>        Version: <span class=m>3</span> <span class=o>(</span>0x2<span class=o>)</span>
+</span></span><span class=line><span class=cl>    Signature Algorithm: sha256WithRSAEncryption
+</span></span><span class=line><span class=cl>        Issuer: <span class=nv>CN</span><span class=o>=</span>FFU ROOT CA
+</span></span><span class=line><span class=cl>        Subject: <span class=nv>CN</span><span class=o>=</span>FFU ROOT CA
+</span></span><span class=line><span class=cl>        X509v3 extensions:
+</span></span><span class=line><span class=cl>            X509v3 Subject Key Identifier:
+</span></span><span class=line><span class=cl>            X509v3 Authority Key Identifier:
+</span></span><span class=line><span class=cl>            X509v3 Basic Constraints:
+</span></span><span class=line><span class=cl>                CA:TRUE
+</span></span></code></pre></div><h4 class="relative group">服务端证书生成<div id=服务端证书生成 class=anchor></div><span class="absolute top-0 w-6 transition-opacity opacity-0 ltr:-left-6 rtl:-right-6 not-prose group-hover:opacity-100"><a class="group-hover:text-primary-300 dark:group-hover:text-neutral-700" style=text-decoration-line:none!important href=#%e6%9c%8d%e5%8a%a1%e7%ab%af%e8%af%81%e4%b9%a6%e7%94%9f%e6%88%90 aria-label=锚点>#</a></span></h4><div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=line><span class=cl><span class=c1># 创建服务端证书私钥</span>
+</span></span><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> cert$ openssl genrsa -out server.key <span class=m>2048</span>
+</span></span><span class=line><span class=cl>Generating RSA private key, <span class=m>2048</span> bit long modulus
+</span></span><span class=line><span class=cl>......+++
+</span></span><span class=line><span class=cl>.....+++
+</span></span><span class=line><span class=cl>e is <span class=m>65537</span> <span class=o>(</span>0x10001<span class=o>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1># 创建服务端证书请求文件</span>
+</span></span><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> cert$ openssl req -new -key server.key  -out server.csr -config openssl.cnf -subj <span class=s2>&#34;/CN=*.mysvn.com&#34;</span>
+</span></span></code></pre></div><h5 class="relative group">openssl x509签发<div id=openssl-x509签发 class=anchor></div><span class="absolute top-0 w-6 transition-opacity opacity-0 ltr:-left-6 rtl:-right-6 not-prose group-hover:opacity-100"><a class="group-hover:text-primary-300 dark:group-hover:text-neutral-700" style=text-decoration-line:none!important href=#openssl-x509%e7%ad%be%e5%8f%91 aria-label=锚点>#</a></span></h5><p><code>opessl x509 -req</code> 命令可以签发证书，但是没有维护历史签发证书记录，也不支持吊销证书</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=line><span class=cl><span class=c1># 签发服务器证书</span>
+</span></span><span class=line><span class=cl><span class=c1># -extfile openssl.cnf: 指定包含扩展配置的文件名</span>
+</span></span><span class=line><span class=cl><span class=c1># -extensions v3_req: 指定使用扩展配置中的v3_req扩展来生成证书</span>
+</span></span><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> cert$ openssl x509 -req -in server.csr -CA root_ca.crt -CAkey root_ca.key -CAcreateserial  -out server.crt -days <span class=m>36500</span> -extensions v3_req -extfile openssl.cnf
+</span></span><span class=line><span class=cl>Signature ok
+</span></span><span class=line><span class=cl><span class=nv>subject</span><span class=o>=</span>/CN<span class=o>=</span>*.mysvn.com
+</span></span><span class=line><span class=cl>Getting CA Private Key
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> cert$ openssl x509 -in server.crt -noout  -text -certopt no_header,no_version,no_serial,no_signame,no_validity,no_pubkey,no_sigdump,no_aux
+</span></span><span class=line><span class=cl>        Issuer: <span class=nv>CN</span><span class=o>=</span>FFU ROOT CA
+</span></span><span class=line><span class=cl>        Subject: <span class=nv>CN</span><span class=o>=</span>*.mysvn.com
+</span></span><span class=line><span class=cl>        X509v3 extensions:
+</span></span><span class=line><span class=cl>            X509v3 Basic Constraints:
+</span></span><span class=line><span class=cl>                CA:FALSE
+</span></span><span class=line><span class=cl>            X509v3 Key Usage:
+</span></span><span class=line><span class=cl>                Digital Signature, Non Repudiation, Key Encipherment
+</span></span><span class=line><span class=cl>            X509v3 Subject Alternative Name:
+</span></span><span class=line><span class=cl>                DNS:mysvn.com, IP Address:192.168.83.127
+</span></span></code></pre></div><h5 class="relative group">openssl ca签发<div id=openssl-ca签发 class=anchor></div><span class="absolute top-0 w-6 transition-opacity opacity-0 ltr:-left-6 rtl:-right-6 not-prose group-hover:opacity-100"><a class="group-hover:text-primary-300 dark:group-hover:text-neutral-700" style=text-decoration-line:none!important href=#openssl-ca%e7%ad%be%e5%8f%91 aria-label=锚点>#</a></span></h5><p><code>openssl ca</code> 命令根据指定配置文件中<code>[ ca ]</code> 的相关配置项，维护本地签发证书的索引数据库，便于管理，也支持吊销证书</p><p><code>openssl.cnf</code>文件新增配置，如下</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> cert$ mkdir /data/cert/myCA <span class=o>&amp;&amp;</span> <span class=nb>cd</span> myCA
+</span></span><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> cert$ cat myCA/openssl.cnf
+</span></span><span class=line><span class=cl><span class=c1># openss ca命令使用的配置section</span>
+</span></span><span class=line><span class=cl><span class=o>[</span> ca <span class=o>]</span>
+</span></span><span class=line><span class=cl><span class=nv>default_ca</span>	<span class=o>=</span> CA_default
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=o>[</span> CA_default <span class=o>]</span>
+</span></span><span class=line><span class=cl><span class=c1># 工作目录</span>
+</span></span><span class=line><span class=cl><span class=nv>dir</span>		<span class=o>=</span> .
+</span></span><span class=line><span class=cl><span class=c1># 签发证书存放目录</span>
+</span></span><span class=line><span class=cl><span class=nv>certs</span>		<span class=o>=</span> <span class=nv>$dir</span>/certs
+</span></span><span class=line><span class=cl><span class=c1># 吊销证书列表文件存放目录</span>
+</span></span><span class=line><span class=cl><span class=nv>crl_dir</span>		<span class=o>=</span> <span class=nv>$dir</span>/crl
+</span></span><span class=line><span class=cl><span class=c1># 签发证书索引数据库</span>
+</span></span><span class=line><span class=cl><span class=nv>database</span>	<span class=o>=</span> <span class=nv>$dir</span>/index.txt
+</span></span><span class=line><span class=cl><span class=c1># 证书的subject是否保证唯一性</span>
+</span></span><span class=line><span class=cl><span class=nv>unique_subject</span>	<span class=o>=</span> no
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1># 证书tmp目录，默认文件名为[serialnumber.pem]</span>
+</span></span><span class=line><span class=cl><span class=nv>new_certs_dir</span>	<span class=o>=</span> <span class=nv>$dir</span>/newcerts
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1># CA根证书文件</span>
+</span></span><span class=line><span class=cl><span class=nv>certificate</span>	<span class=o>=</span> <span class=nv>$dir</span>/root_ca.crt
+</span></span><span class=line><span class=cl><span class=c1># 当前可用的证书序列号</span>
+</span></span><span class=line><span class=cl><span class=nv>serial</span>		<span class=o>=</span> <span class=nv>$dir</span>/serial
+</span></span><span class=line><span class=cl><span class=c1># 当前可用的吊销证书列表序列号</span>
+</span></span><span class=line><span class=cl><span class=nv>crlnumber</span>	<span class=o>=</span> <span class=nv>$dir</span>/crlnumber
+</span></span><span class=line><span class=cl><span class=c1># 吊销证书列表文件</span>
+</span></span><span class=line><span class=cl><span class=nv>crl</span>		<span class=o>=</span> <span class=nv>$dir</span>/crl.pem
+</span></span><span class=line><span class=cl><span class=c1># CA根证书私钥</span>
+</span></span><span class=line><span class=cl><span class=nv>private_key</span>	<span class=o>=</span> <span class=nv>$dir</span>/private/root_ca.key
+</span></span><span class=line><span class=cl><span class=nv>RANDFILE</span>	<span class=o>=</span> <span class=nv>$dir</span>/private/.rand
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1># 默认x509扩展的section配置</span>
+</span></span><span class=line><span class=cl><span class=nv>x509_extensions</span>	<span class=o>=</span> usr_cert
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=nv>name_opt</span> 	<span class=o>=</span> ca_default
+</span></span><span class=line><span class=cl><span class=nv>cert_opt</span> 	<span class=o>=</span> ca_default
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1># 签发证书默认有效期天数</span>
+</span></span><span class=line><span class=cl><span class=nv>default_days</span>	<span class=o>=</span> <span class=m>365</span>
+</span></span><span class=line><span class=cl><span class=c1># 吊销证书列表默认有效期天数</span>
+</span></span><span class=line><span class=cl><span class=nv>default_crl_days</span><span class=o>=</span> <span class=m>30</span>
+</span></span><span class=line><span class=cl><span class=c1># 默认加密算法</span>
+</span></span><span class=line><span class=cl><span class=nv>default_md</span>	<span class=o>=</span> sha256
+</span></span><span class=line><span class=cl><span class=c1># 是否对subject的各属性重新排序，建议配置</span>
+</span></span><span class=line><span class=cl><span class=nv>preserve</span>	<span class=o>=</span> no
+</span></span><span class=line><span class=cl><span class=c1># subject的各属性设置的策略</span>
+</span></span><span class=line><span class=cl><span class=nv>policy</span>		<span class=o>=</span> policy_anything
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1># optional 可选设置项</span>
+</span></span><span class=line><span class=cl><span class=c1># supplied 必须设置项</span>
+</span></span><span class=line><span class=cl><span class=o>[</span> policy_anything <span class=o>]</span>
+</span></span><span class=line><span class=cl><span class=nv>countryName</span>		<span class=o>=</span> optional
+</span></span><span class=line><span class=cl><span class=nv>stateOrProvinceName</span>	<span class=o>=</span> optional
+</span></span><span class=line><span class=cl><span class=nv>localityName</span>		<span class=o>=</span> optional
+</span></span><span class=line><span class=cl><span class=nv>organizationName</span>	<span class=o>=</span> optional
+</span></span><span class=line><span class=cl><span class=nv>organizationalUnitName</span>	<span class=o>=</span> optional
+</span></span><span class=line><span class=cl><span class=nv>commonName</span>		<span class=o>=</span> supplied
+</span></span><span class=line><span class=cl><span class=nv>emailAddress</span>		<span class=o>=</span> optional
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=o>[</span> req <span class=o>]</span>
+</span></span><span class=line><span class=cl><span class=c1># 证书主体的各属性信息使用的section配置，如通用名(CN)、组织单位(OU)</span>
+</span></span><span class=line><span class=cl><span class=nv>distinguished_name</span> <span class=o>=</span> req_distinguished_name
+</span></span><span class=line><span class=cl><span class=c1># 创建自签名证书请求时,使用扩展section配置</span>
+</span></span><span class=line><span class=cl><span class=nv>x509_extensions</span>	<span class=o>=</span> v3_ca
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=o>[</span>req_distinguished_name<span class=o>]</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=o>[</span>v3_ca<span class=o>]</span>
+</span></span><span class=line><span class=cl><span class=nv>subjectKeyIdentifier</span><span class=o>=</span><span class=nb>hash</span>
+</span></span><span class=line><span class=cl><span class=nv>authorityKeyIdentifier</span><span class=o>=</span>keyid:always,issuer
+</span></span><span class=line><span class=cl><span class=c1># basicConstraints 指证书的基本约束(基本限制)扩展字段</span>
+</span></span><span class=line><span class=cl><span class=c1># 该证书具备签发其他证书的能力,可以作为CA证书使用</span>
+</span></span><span class=line><span class=cl><span class=nv>basicConstraints</span> <span class=o>=</span> CA:true
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1># X509证书签发时使用的v3扩展section配置，For Server</span>
+</span></span><span class=line><span class=cl><span class=o>[</span> v3_req <span class=o>]</span>
+</span></span><span class=line><span class=cl><span class=nv>basicConstraints</span> <span class=o>=</span> CA:FALSE
+</span></span><span class=line><span class=cl><span class=nv>keyUsage</span> <span class=o>=</span> nonRepudiation, digitalSignature, keyEncipherment
+</span></span><span class=line><span class=cl><span class=c1># 证书主体CN别名使用的section配置</span>
+</span></span><span class=line><span class=cl><span class=nv>subjectAltName</span> <span class=o>=</span> @mysvn
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1>#根据需求配置</span>
+</span></span><span class=line><span class=cl><span class=o>[</span> mysvn <span class=o>]</span>
+</span></span><span class=line><span class=cl>DNS.1 <span class=o>=</span> ffu.com
+</span></span><span class=line><span class=cl>IP.1 <span class=o>=</span> 192.168.83.127
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1># X509证书签发时使用的扩展section配置，For Client</span>
+</span></span><span class=line><span class=cl><span class=o>[</span> usr_cert <span class=o>]</span>
+</span></span><span class=line><span class=cl><span class=nv>basicConstraints</span><span class=o>=</span>CA:FALSE
+</span></span><span class=line><span class=cl><span class=c1>#keyUsage = nonRepudiation, digitalSignature, keyEncipherment</span>
+</span></span><span class=line><span class=cl><span class=c1>#nsComme = &#34;OpenSSL Generated Certificate&#34;</span>
+</span></span></code></pre></div><p>签发证书</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> cert$ cp -r /etc/pki/CA/* myCA/
+</span></span><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> cert$ cp root_ca.crt myCA/
+</span></span><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> cert$ cp root_ca.key myCA/private/
+</span></span><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> cert$ cp server.key myCA/private/
+</span></span><span class=line><span class=cl><span class=c1># 生成证书索引数据库文件</span>
+</span></span><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> myCA$ touch index.txt
+</span></span><span class=line><span class=cl><span class=c1># 指定第一个签发证书的序列号,十六进制，签发后序列号自动增加</span>
+</span></span><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> myCA$ <span class=nb>echo</span> <span class=m>01</span> &gt; serial
+</span></span><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> myCA$ openssl req -new -key private/server.key -out server.csr -config openssl.cnf -subj <span class=s2>&#34;/CN=*.ffu.com&#34;</span>
+</span></span><span class=line><span class=cl><span class=c1># -extensions 使用openssl.cnf中[ v3_req ]section配置</span>
+</span></span><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> myCA$ openssl ca -config openssl.cnf -in server.csr -out certs/server.crt -days <span class=m>365</span> -extensions v3_req -batch
+</span></span><span class=line><span class=cl>Using configuration from openssl.cnf
+</span></span><span class=line><span class=cl>Check that the request matches the signature
+</span></span><span class=line><span class=cl>Signature ok
+</span></span><span class=line><span class=cl>Certificate Details:
+</span></span><span class=line><span class=cl>        Serial Number: <span class=m>1</span> <span class=o>(</span>0x1<span class=o>)</span>
+</span></span><span class=line><span class=cl>        Validity
+</span></span><span class=line><span class=cl>            Not Before: Feb  <span class=m>6</span> 07:37:58 <span class=m>2020</span> GMT
+</span></span><span class=line><span class=cl>            Not After : Feb  <span class=m>5</span> 07:37:58 <span class=m>2021</span> GMT
+</span></span><span class=line><span class=cl>        Subject:
+</span></span><span class=line><span class=cl>            <span class=nv>commonName</span>                <span class=o>=</span> *.ffu.com
+</span></span><span class=line><span class=cl>        X509v3 extensions:
+</span></span><span class=line><span class=cl>            X509v3 Basic Constraints:
+</span></span><span class=line><span class=cl>                CA:FALSE
+</span></span><span class=line><span class=cl>            X509v3 Key Usage:
+</span></span><span class=line><span class=cl>                Digital Signature, Non Repudiation, Key Encipherment
+</span></span><span class=line><span class=cl>            X509v3 Subject Alternative Name:
+</span></span><span class=line><span class=cl>                DNS:ffu.com, IP Address:192.168.83.127
+</span></span><span class=line><span class=cl>Certificate is to be certified <span class=k>until</span> Feb  <span class=m>5</span> 07:37:58 <span class=m>2021</span> GMT <span class=o>(</span><span class=m>365</span> days<span class=o>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>Write out database with <span class=m>1</span> new entries
+</span></span><span class=line><span class=cl>Data Base Updated
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1># 索引库文件已更新</span>
+</span></span><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> myCA$ cat index.txt
+</span></span><span class=line><span class=cl>V	210205072251Z		01	unknown	/CN<span class=o>=</span>*.ffu.com
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1># 目录结构</span>
+</span></span><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> myCA$ tree
+</span></span><span class=line><span class=cl>.
+</span></span><span class=line><span class=cl>├── certs
+</span></span><span class=line><span class=cl>│   └── server.crt
+</span></span><span class=line><span class=cl>├── crl
+</span></span><span class=line><span class=cl>├── crlnumber
+</span></span><span class=line><span class=cl>├── index.txt
+</span></span><span class=line><span class=cl>├── index.txt.attr
+</span></span><span class=line><span class=cl>├── index.txt.old
+</span></span><span class=line><span class=cl>├── newcerts
+</span></span><span class=line><span class=cl>│   └── 01.pem
+</span></span><span class=line><span class=cl>├── openssl.cnf
+</span></span><span class=line><span class=cl>├── private
+</span></span><span class=line><span class=cl>│   ├── root_ca.key
+</span></span><span class=line><span class=cl>│   └── server.key
+</span></span><span class=line><span class=cl>├── root_ca.crt
+</span></span><span class=line><span class=cl>├── serial
+</span></span><span class=line><span class=cl>├── serial.old
+</span></span><span class=line><span class=cl>└── server.csr
+</span></span></code></pre></div><h4 class="relative group">客户端证书生成<div id=客户端证书生成 class=anchor></div><span class="absolute top-0 w-6 transition-opacity opacity-0 ltr:-left-6 rtl:-right-6 not-prose group-hover:opacity-100"><a class="group-hover:text-primary-300 dark:group-hover:text-neutral-700" style=text-decoration-line:none!important href=#%e5%ae%a2%e6%88%b7%e7%ab%af%e8%af%81%e4%b9%a6%e7%94%9f%e6%88%90 aria-label=锚点>#</a></span></h4><div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> myCA$ openssl genrsa -out private/client.key <span class=m>2048</span>
+</span></span><span class=line><span class=cl>Generating RSA private key, <span class=m>2048</span> bit long modulus
+</span></span><span class=line><span class=cl>..................+++
+</span></span><span class=line><span class=cl>.......................+++
+</span></span><span class=line><span class=cl>e is <span class=m>65537</span> <span class=o>(</span>0x10001<span class=o>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> myCA$ openssl req -new -key private/client.key  -out client.csr -config openssl.cnf  -subj <span class=s2>&#34;/CN=svn_client&#34;</span>
+</span></span><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> myCA$ openssl ca -config openssl.cnf -in client.csr -out certs/client.crt -days <span class=m>365</span> -batch
+</span></span><span class=line><span class=cl>Using configuration from openssl.cnf
+</span></span><span class=line><span class=cl>Check that the request matches the signature
+</span></span><span class=line><span class=cl>Signature ok
+</span></span><span class=line><span class=cl>Certificate Details:
+</span></span><span class=line><span class=cl>        Serial Number: <span class=m>2</span> <span class=o>(</span>0x2<span class=o>)</span>
+</span></span><span class=line><span class=cl>        Validity
+</span></span><span class=line><span class=cl>            Not Before: Feb  <span class=m>6</span> 07:39:46 <span class=m>2020</span> GMT
+</span></span><span class=line><span class=cl>            Not After : Feb  <span class=m>5</span> 07:39:46 <span class=m>2021</span> GMT
+</span></span><span class=line><span class=cl>        Subject:
+</span></span><span class=line><span class=cl>            <span class=nv>commonName</span>                <span class=o>=</span> svn_client
+</span></span><span class=line><span class=cl>        X509v3 extensions:
+</span></span><span class=line><span class=cl>            X509v3 Basic Constraints:
+</span></span><span class=line><span class=cl>                CA:FALSE
+</span></span><span class=line><span class=cl>Certificate is to be certified <span class=k>until</span> Feb  <span class=m>5</span> 07:39:46 <span class=m>2021</span> GMT <span class=o>(</span><span class=m>365</span> days<span class=o>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>Write out database with <span class=m>1</span> new entries
+</span></span><span class=line><span class=cl>Data Base Updated
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> myCA$ cat index.txt
+</span></span><span class=line><span class=cl>V	210205073758Z		01	unknown	/CN<span class=o>=</span>*.ffu.com
+</span></span><span class=line><span class=cl>V	210205073946Z		02	unknown	/CN<span class=o>=</span>svn_client
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1># 创建PKCS12格式的证书文件，需要下发给客户端</span>
+</span></span><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> myCA$ openssl pkcs12 -export -clcerts -in certs/client.crt -inkey private/client.key -out certs/client.p12
+</span></span><span class=line><span class=cl>Enter Export Password:
+</span></span><span class=line><span class=cl>Verifying - Enter Export Password:
+</span></span></code></pre></div><h4 class="relative group">修改配置<div id=修改配置 class=anchor></div><span class="absolute top-0 w-6 transition-opacity opacity-0 ltr:-left-6 rtl:-right-6 not-prose group-hover:opacity-100"><a class="group-hover:text-primary-300 dark:group-hover:text-neutral-700" style=text-decoration-line:none!important href=#%e4%bf%ae%e6%94%b9%e9%85%8d%e7%bd%ae aria-label=锚点>#</a></span></h4><p>配置文件/etc/httpd/conf/httpd.conf</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=line><span class=cl><span class=c1># 注释http监听端口</span>
+</span></span><span class=line><span class=cl><span class=c1># Listen 80</span>
+</span></span><span class=line><span class=cl><span class=c1># 新增一个全局默认ServerName</span>
+</span></span><span class=line><span class=cl>ServerName 127.0.0.1
+</span></span><span class=line><span class=cl><span class=c1># 新增SSLRequireSSL</span>
+</span></span><span class=line><span class=cl>&lt;Directory /&gt;
+</span></span><span class=line><span class=cl>    AllowOverride none
+</span></span><span class=line><span class=cl>    SSLRequireSSL
+</span></span><span class=line><span class=cl>    Require all denied
+</span></span><span class=line><span class=cl>&lt;/Directory&gt;
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1># 新增</span>
+</span></span><span class=line><span class=cl>TraceEnable off
+</span></span><span class=line><span class=cl>ServerSignature Off
+</span></span><span class=line><span class=cl>ServerTokens Prod
+</span></span></code></pre></div><p>ssl配置</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> repos$ <span class=nb>cd</span> /etc/httpd/
+</span></span><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> httpd$ mkdir -p cert/crl
+</span></span><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> httpd$ <span class=nb>cd</span> cert/
+</span></span><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> cert$ cp /data/cert/server.key .
+</span></span><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> cert$ cp /data/cert/server.crt .
+</span></span><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> cert$ cp /data/cert/root_ca.crt .
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1># 配置文件/etc/httpd/conf.d/ssl.conf</span>
+</span></span><span class=line><span class=cl><span class=c1># 监听所有网卡</span>
+</span></span><span class=line><span class=cl>&lt;VirtualHost *:443&gt;
+</span></span><span class=line><span class=cl><span class=c1># 虚拟主机匹配的域名</span>
+</span></span><span class=line><span class=cl>ServerName mysvn.ffu.com
+</span></span><span class=line><span class=cl>ServerAlias 192.168.83.127:443
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1># 服务端公私钥</span>
+</span></span><span class=line><span class=cl>SSLCertificateFile /etc/httpd/cert/server.crt
+</span></span><span class=line><span class=cl>SSLCertificateKeyFile /etc/httpd/cert/server.key
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1># 开启客户端证书验证, 按需配置</span>
+</span></span><span class=line><span class=cl>SSLCACertificateFile /etc/httpd/cert/root_ca.crt
+</span></span><span class=line><span class=cl>SSLVerifyClient require
+</span></span><span class=line><span class=cl>SSLVerifyDepth  <span class=m>10</span>
+</span></span><span class=line><span class=cl>SSLCARevocationCheck chain
+</span></span><span class=line><span class=cl>SSLCARevocationFile <span class=s2>&#34;/etc/httpd/cert/crl/crl.pem&#34;</span>
+</span></span></code></pre></div><p>因为当前httpd版本不支持参数<code>no_crl_for_cert_ok</code>，可以生成一个不包含吊销证书列表的CRL文件，避免httpd报错</p><blockquote><p>Optional <em>flag</em>s available in httpd 2.4.21 or later</p></blockquote><p>openssl.cnf中配置了CRL默认有效期<code>default_crl_days= 30</code> ，需要及时更新<code>crl.pem</code>并reload httpd服务。如果<code>crl.pem</code>过期，请求httpd会报错</p><div class="flex px-4 py-3 rounded-md bg-primary-100 dark:bg-primary-900"><span class="text-primary-400 ltr:pr-3 rtl:pl-3 flex items-center"><span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentcolor" d="M506.3 417 293 53c-16.33-28-57.54-28-73.98.0l-213.2 364C-10.59 444.9 9.849 480 42.74 480h426.6c32.76.0 53.26-35 36.96-63zM232 168c0-13.25 10.75-24 24-24s24 10.8 24 24v128c0 13.25-10.75 24-23.1 24S232 309.3 232 296V168zm24 248c-17.36.0-31.44-14.08-31.44-31.44s14.07-31.44 31.44-31.44 31.44 14.08 31.44 31.44C287.4 401.9 273.4 416 256 416z"/></svg>
+</span></span><span class=dark:text-neutral-300>AH02276: Certificate Verification: Error (12): CRL has expired</span></div><p>也可以通过命令行参数<code>-crldays</code> 指定有效期</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> myCA$ openssl ca -gencrl -out crl/crl.pem -config openssl.cnf -crldays <span class=m>365</span>
+</span></span><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> myCA$ cp crl/crl.pem /etc/httpd/cert/crl/
+</span></span><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> myCA$ openssl crl -in crl/crl.pem -noout -text
+</span></span><span class=line><span class=cl>Certificate Revocation List <span class=o>(</span>CRL<span class=o>)</span>:
+</span></span><span class=line><span class=cl>        Version <span class=m>2</span> <span class=o>(</span>0x1<span class=o>)</span>
+</span></span><span class=line><span class=cl>    Signature Algorithm: sha256WithRSAEncryption
+</span></span><span class=line><span class=cl>        Issuer: /CN<span class=o>=</span>FFU ROOT CA
+</span></span><span class=line><span class=cl>        Last Update: Feb  <span class=m>7</span> 06:30:52 <span class=m>2020</span> GMT
+</span></span><span class=line><span class=cl>        Next Update: Feb  <span class=m>6</span> 06:30:52 <span class=m>2021</span> GMT
+</span></span><span class=line><span class=cl>        CRL extensions:
+</span></span><span class=line><span class=cl>            X509v3 CRL Number:
+</span></span><span class=line><span class=cl>                <span class=m>1</span>
+</span></span><span class=line><span class=cl> No Revoked Certificates.  
+</span></span></code></pre></div><p>SVN配置文件</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> conf.d$ cat /etc/httpd/conf.d/subversion.conf
+</span></span><span class=line><span class=cl>&lt;Location /&gt;
+</span></span><span class=line><span class=cl>   DAV svn
+</span></span><span class=line><span class=cl>   SVNListParentPath off
+</span></span><span class=line><span class=cl>   SVNParentPath /data/repos/
+</span></span><span class=line><span class=cl>   <span class=c1># Limit write permission to list of valid users.</span>
+</span></span><span class=line><span class=cl>   AuthType Basic
+</span></span><span class=line><span class=cl>   AuthName <span class=s2>&#34;Authorization Realm&#34;</span>
+</span></span><span class=line><span class=cl>   <span class=c1>#用户认证密码库文件</span>
+</span></span><span class=line><span class=cl>   AuthUserFile /data/repos/myhub/conf/httpdPasswd
+</span></span><span class=line><span class=cl>   AuthzSVNAccessFile /data/repos/myhub/conf/authz
+</span></span><span class=line><span class=cl>   Satisfy all
+</span></span><span class=line><span class=cl>   SVNAutoversioning on
+</span></span><span class=line><span class=cl>   ModMimeUsePathInfo on
+</span></span><span class=line><span class=cl>   Require valid-user
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>   Order Deny,Allow
+</span></span><span class=line><span class=cl>   Allow from 192.168.83.0/24
+</span></span><span class=line><span class=cl>   Deny from all
+</span></span><span class=line><span class=cl>&lt;/Location&gt;
+</span></span><span class=line><span class=cl>&lt;Location ~ <span class=s2>&#34;\.svn&#34;</span>&gt;
+</span></span><span class=line><span class=cl>    Order Deny,Allow
+</span></span><span class=line><span class=cl>    Deny from all
+</span></span><span class=line><span class=cl>&lt;/Location&gt;
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> conf.d$ httpd -t
+</span></span><span class=line><span class=cl>Syntax OK
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> repos$ chown apache:apache /data/repos/myhub -R
+</span></span><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> conf.d$ systemctl start httpd
+</span></span></code></pre></div><h3 class="relative group">svn客户端访问<div id=svn客户端访问 class=anchor></div><span class="absolute top-0 w-6 transition-opacity opacity-0 ltr:-left-6 rtl:-right-6 not-prose group-hover:opacity-100"><a class="group-hover:text-primary-300 dark:group-hover:text-neutral-700" style=text-decoration-line:none!important href=#svn%e5%ae%a2%e6%88%b7%e7%ab%af%e8%ae%bf%e9%97%ae aria-label=锚点>#</a></span></h3><p>以下配置适用linux或者macos客户端访问</p><p>修改svn客户端配置文件<code>~/.subversion/server</code></p><div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=line><span class=cl><span class=o>[</span>groups<span class=o>]</span>
+</span></span><span class=line><span class=cl><span class=nv>myhub</span> <span class=o>=</span> 192.168.83.127
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=o>[</span>myhub<span class=o>]</span>
+</span></span><span class=line><span class=cl>store-ssl-client-cert-pp <span class=o>=</span> yes
+</span></span><span class=line><span class=cl><span class=c1># 明文客户端秘钥包密码不保存本地</span>
+</span></span><span class=line><span class=cl>store-ssl-client-cert-pp-plaintext <span class=o>=</span> no
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>store-passwords <span class=o>=</span> yes
+</span></span><span class=line><span class=cl><span class=c1># 明文用户密码不保存本地</span>
+</span></span><span class=line><span class=cl>store-plaintext-passwords <span class=o>=</span> no
+</span></span><span class=line><span class=cl><span class=c1># 服务器https双向认证时，客户端秘钥包文件</span>
+</span></span><span class=line><span class=cl>ssl-client-cert-file <span class=o>=</span> /root/.subversion/myhub/client.p12
+</span></span><span class=line><span class=cl><span class=c1># 服务器证书的CA</span>
+</span></span><span class=line><span class=cl>ssl-authority-files <span class=o>=</span> /root/.subversion/myhub/root_ca.crt
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=o>[</span>root@node2<span class=o>]</span> ~/.subversion/myhub$ ls
+</span></span><span class=line><span class=cl>client.p12  root_ca.crt
+</span></span></code></pre></div><p>拉取SVN<code>myhub</code>库到本地，第一次登录需要输入密码，如果配置了保存密码，下次登录不需要再次输入</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=line><span class=cl><span class=o>[</span>root@node2<span class=o>]</span> /data$ svn checkout https://192.168.83.127/myhub --username<span class=o>=</span>lisa
+</span></span><span class=line><span class=cl>“/root/.subversion/myhub/client.p12”的密码:
+</span></span><span class=line><span class=cl>认证领域: &lt;https://192.168.83.127:443&gt; Authorization Realm
+</span></span><span class=line><span class=cl>“lisa”的密码:
+</span></span><span class=line><span class=cl>取出版本 0。
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=o>[</span>root@node2<span class=o>]</span> /data$ <span class=nb>cd</span> myhub/
+</span></span><span class=line><span class=cl><span class=o>[</span>root@node2<span class=o>]</span> /data$ touch <span class=nb>test</span>
+</span></span><span class=line><span class=cl><span class=o>[</span>root@node2<span class=o>]</span> /data/myhub$ svn status
+</span></span><span class=line><span class=cl>?       <span class=nb>test</span>
+</span></span><span class=line><span class=cl><span class=o>[</span>root@node2<span class=o>]</span> /data/myhub$ svn add <span class=nb>test</span>
+</span></span><span class=line><span class=cl>A         <span class=nb>test</span>
+</span></span><span class=line><span class=cl><span class=o>[</span>root@node2<span class=o>]</span> /data/myhub$ svn status
+</span></span><span class=line><span class=cl>A       <span class=nb>test</span>
+</span></span><span class=line><span class=cl><span class=o>[</span>root@node2<span class=o>]</span> /data/myhub$ svn ci -m <span class=s2>&#34;add test file&#34;</span>
+</span></span><span class=line><span class=cl>正在增加       <span class=nb>test</span>
+</span></span><span class=line><span class=cl>传输文件数据.
+</span></span><span class=line><span class=cl>提交后的版本为 1。
+</span></span><span class=line><span class=cl><span class=o>[</span>root@node2<span class=o>]</span> /data/myhub$ svn update
+</span></span><span class=line><span class=cl>正在升级 <span class=s1>&#39;.&#39;</span>:
+</span></span><span class=line><span class=cl>版本 1。
+</span></span><span class=line><span class=cl><span class=o>[</span>root@node2<span class=o>]</span> /data/myhub$ svn log
+</span></span><span class=line><span class=cl>------------------------------------------------------------------------
+</span></span><span class=line><span class=cl>r1 <span class=p>|</span> lisa <span class=p>|</span> 2020-05-06 21:17:47 +0800 <span class=o>(</span>二, 2020-05-06<span class=o>)</span> <span class=p>|</span> <span class=m>1</span> 行
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>add <span class=nb>test</span> file
+</span></span><span class=line><span class=cl>------------------------------------------------------------------------
+</span></span></code></pre></div><h3 class="relative group">客户端证书的吊销<div id=客户端证书的吊销 class=anchor></div><span class="absolute top-0 w-6 transition-opacity opacity-0 ltr:-left-6 rtl:-right-6 not-prose group-hover:opacity-100"><a class="group-hover:text-primary-300 dark:group-hover:text-neutral-700" style=text-decoration-line:none!important href=#%e5%ae%a2%e6%88%b7%e7%ab%af%e8%af%81%e4%b9%a6%e7%9a%84%e5%90%8a%e9%94%80 aria-label=锚点>#</a></span></h3><p>客户端pcks12证书可能会泄露，如果遇到这种情况，需要服务器拒绝其访问。可以通过<code>openssl ca -revoke</code>命令吊销客户端证书，并更新httpd配置的crl.pem文件</p><p>以上文lisa用户的客户端证书为例</p><h4 class="relative group">吊销旧证书<div id=吊销旧证书 class=anchor></div><span class="absolute top-0 w-6 transition-opacity opacity-0 ltr:-left-6 rtl:-right-6 not-prose group-hover:opacity-100"><a class="group-hover:text-primary-300 dark:group-hover:text-neutral-700" style=text-decoration-line:none!important href=#%e5%90%8a%e9%94%80%e6%97%a7%e8%af%81%e4%b9%a6 aria-label=锚点>#</a></span></h4><div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> ~$ <span class=nb>cd</span> /data/cert/myCA
+</span></span><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> myCA$ openssl ca -revoke certs/client.crt -config openssl.cnf
+</span></span><span class=line><span class=cl>Using configuration from openssl.cnf
+</span></span><span class=line><span class=cl>Revoking Certificate 02.
+</span></span><span class=line><span class=cl>Data Base Updated
+</span></span><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> myCA$ cat index.txt
+</span></span><span class=line><span class=cl>V	210205073758Z		01	unknown	/CN<span class=o>=</span>*.ffu.com
+</span></span><span class=line><span class=cl>R	210205073946Z	200207065105Z	02	unknown	/CN<span class=o>=</span>svn_client
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> myCA$ openssl ca -gencrl -out crl/crl.pem -config openssl.cnf -crldays <span class=m>365</span>
+</span></span><span class=line><span class=cl>Using configuration from openssl.cnf
+</span></span><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> myCA$ openssl crl -in crl/crl.pem -noout -text
+</span></span><span class=line><span class=cl>Certificate Revocation List <span class=o>(</span>CRL<span class=o>)</span>:
+</span></span><span class=line><span class=cl>        Version <span class=m>2</span> <span class=o>(</span>0x1<span class=o>)</span>
+</span></span><span class=line><span class=cl>    Signature Algorithm: sha256WithRSAEncryption
+</span></span><span class=line><span class=cl>        Issuer: /CN<span class=o>=</span>FFU ROOT CA
+</span></span><span class=line><span class=cl>        Last Update: Feb  <span class=m>7</span> 06:53:00 <span class=m>2020</span> GMT
+</span></span><span class=line><span class=cl>        Next Update: Feb  <span class=m>6</span> 06:53:00 <span class=m>2021</span> GMT
+</span></span><span class=line><span class=cl>        CRL extensions:
+</span></span><span class=line><span class=cl>            X509v3 CRL Number:
+</span></span><span class=line><span class=cl>                <span class=m>2</span>
+</span></span><span class=line><span class=cl>Revoked Certificates:
+</span></span><span class=line><span class=cl>    Serial Number: <span class=m>02</span>
+</span></span><span class=line><span class=cl>        Revocation Date: Feb  <span class=m>7</span> 06:51:05 <span class=m>2020</span> GMT
+</span></span><span class=line><span class=cl>        
+</span></span><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> myCA$ cp crl/crl.pem /etc/httpd/cert/crl/  
+</span></span><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> myCA$ httpd -t
+</span></span><span class=line><span class=cl>Syntax OK
+</span></span><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> myCA$ httpd -k graceful
+</span></span></code></pre></div><p>客户端使用旧证书client.p12访问失败</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=line><span class=cl><span class=o>[</span>root@node2<span class=o>]</span> /data/myhub$ svn list
+</span></span><span class=line><span class=cl>svn: E175002: Unable to connect to a repository at URL <span class=s1>&#39;https://192.168.83.127/myhub&#39;</span>
+</span></span><span class=line><span class=cl>svn: E175002: 方法 OPTIONS 失败于 “https://192.168.83.127/myhub”: SSL handshake failed: 收到 SSL 警报： 证书已吊销 <span class=o>(</span>https://192.168.83.127<span class=o>)</span>
+</span></span></code></pre></div><h4 class="relative group">签发新证书<div id=签发新证书 class=anchor></div><span class="absolute top-0 w-6 transition-opacity opacity-0 ltr:-left-6 rtl:-right-6 not-prose group-hover:opacity-100"><a class="group-hover:text-primary-300 dark:group-hover:text-neutral-700" style=text-decoration-line:none!important href=#%e7%ad%be%e5%8f%91%e6%96%b0%e8%af%81%e4%b9%a6 aria-label=锚点>#</a></span></h4><div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> myCA$ openssl genrsa -out private/new_client.key <span class=m>2048</span>
+</span></span><span class=line><span class=cl>Generating RSA private key, <span class=m>2048</span> bit long modulus
+</span></span><span class=line><span class=cl>............................................................................................................+++
+</span></span><span class=line><span class=cl>...................................+++
+</span></span><span class=line><span class=cl>e is <span class=m>65537</span> <span class=o>(</span>0x10001<span class=o>)</span>
+</span></span><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> myCA$ openssl req -new -key private/new_client.key  -out new_client.csr -config openssl.cnf  -subj <span class=s2>&#34;/CN=svn_client&#34;</span>
+</span></span><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> myCA$ openssl ca -config openssl.cnf -in new_client.csr -out certs/new_client.crt -days <span class=m>365</span> -batch
+</span></span><span class=line><span class=cl>Using configuration from openssl.cnf
+</span></span><span class=line><span class=cl>Check that the request matches the signature
+</span></span><span class=line><span class=cl>Signature ok
+</span></span><span class=line><span class=cl>Certificate Details:
+</span></span><span class=line><span class=cl>        Serial Number: <span class=m>3</span> <span class=o>(</span>0x3<span class=o>)</span>
+</span></span><span class=line><span class=cl>        Validity
+</span></span><span class=line><span class=cl>            Not Before: Feb  <span class=m>7</span> 07:02:18 <span class=m>2020</span> GMT
+</span></span><span class=line><span class=cl>            Not After : Feb  <span class=m>6</span> 07:02:18 <span class=m>2021</span> GMT
+</span></span><span class=line><span class=cl>        Subject:
+</span></span><span class=line><span class=cl>            <span class=nv>commonName</span>                <span class=o>=</span> svn_client
+</span></span><span class=line><span class=cl>        X509v3 extensions:
+</span></span><span class=line><span class=cl>            X509v3 Basic Constraints:
+</span></span><span class=line><span class=cl>                CA:FALSE
+</span></span><span class=line><span class=cl>Certificate is to be certified <span class=k>until</span> Feb  <span class=m>6</span> 07:02:18 <span class=m>2021</span> GMT <span class=o>(</span><span class=m>365</span> days<span class=o>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>Write out database with <span class=m>1</span> new entries
+</span></span><span class=line><span class=cl>Data Base Updated
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=o>[</span>root@test<span class=o>]</span> myCA$ openssl pkcs12 -export -clcerts -in certs/new_client.crt -inkey private/new_client.key -out certs/new_client.p12
+</span></span><span class=line><span class=cl>Enter Export Password:
+</span></span><span class=line><span class=cl>Verifying - Enter Export Password:
+</span></span></code></pre></div><p>客户端拿到<code>new_client.p12</code>后访问</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=line><span class=cl><span class=o>[</span>root@node2<span class=o>]</span> ~$ <span class=nb>cd</span> ~/.subversion/myhub
+</span></span><span class=line><span class=cl>root@node2<span class=o>]</span> ~/.subversion/myhub$ mv new_client.p12 client.p12
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=o>[</span>root@node2<span class=o>]</span> ~/.subversion/myhub$ <span class=nb>cd</span> /data/myhub/
+</span></span><span class=line><span class=cl><span class=o>[</span>root@node2<span class=o>]</span> /data/myhub$ svn list
+</span></span><span class=line><span class=cl><span class=nb>test</span>
+</span></span></code></pre></div></div><h2 class="mt-8 text-2xl font-extrabold mb-10">Related</h2><section class="w-full grid gap-4 sm:grid-cols-2 md:grid-cols-3"><a href=/2018/08/docker-tls/ class=min-w-full><div class="min-h-full border border-neutral-200 dark:border-neutral-700 border-2 rounded overflow-hidden shadow-2xl relative backdrop-blur"><div class="px-6 py-4"><div class="font-bold text-xl text-neutral-800 decoration-primary-500 hover:underline hover:underline-offset-2 dark:text-neutral" href=/2018/08/docker-tls/>Docker配置TLS安全认证</div><div class="text-sm text-neutral-500 dark:text-neutral-400"><div style=cursor:default class="flex flex-row flex-wrap items-center"><time datetime="2018-08-08 00:00:00 +0000 UTC">8 August 2018</time><span class="px-2 text-primary-500">&#183;</span><span>516 字</span><span class="px-2 text-primary-500">&#183;</span><span title=预计阅读>3 分钟</span></div><div style=cursor:pointer class="flex flex-row flex-wrap items-center"></div><div style=cursor:pointer class="flex flex-row flex-wrap items-center"><span style=margin-top:.5rem class=mr-2 onclick='window.open("/tags/docker/","_self")'><span class=flex><span class="rounded-md border border-primary-400 px-1 py-[1px] text-xs font-normal text-primary-700 dark:border-primary-600 dark:text-primary-400">Docker
+</span></span></span><span style=margin-top:.5rem class=mr-2 onclick='window.open("/tags/ca/","_self")'><span class=flex><span class="rounded-md border border-primary-400 px-1 py-[1px] text-xs font-normal text-primary-700 dark:border-primary-600 dark:text-primary-400">CA
+</span></span></span><span style=margin-top:.5rem class=mr-2 onclick='window.open("/tags/openssl/","_self")'><span class=flex><span class="rounded-md border border-primary-400 px-1 py-[1px] text-xs font-normal text-primary-700 dark:border-primary-600 dark:text-primary-400">openssl</span></span></span></div></div></div><div class="px-6 pt-4 pb-2"></div></div></a><a href=/2016/04/openssl-ca/ class=min-w-full><div class="min-h-full border border-neutral-200 dark:border-neutral-700 border-2 rounded overflow-hidden shadow-2xl relative backdrop-blur"><div class="px-6 py-4"><div class="font-bold text-xl text-neutral-800 decoration-primary-500 hover:underline hover:underline-offset-2 dark:text-neutral" href=/2016/04/openssl-ca/>如何使用openssl工具创建私有CA</div><div class="text-sm text-neutral-500 dark:text-neutral-400"><div style=cursor:default class="flex flex-row flex-wrap items-center"><time datetime="2016-04-20 00:00:00 +0000 UTC">20 April 2016</time><span class="px-2 text-primary-500">&#183;</span><span>970 字</span><span class="px-2 text-primary-500">&#183;</span><span title=预计阅读>5 分钟</span></div><div style=cursor:pointer class="flex flex-row flex-wrap items-center"></div><div style=cursor:pointer class="flex flex-row flex-wrap items-center"><span style=margin-top:.5rem class=mr-2 onclick='window.open("/tags/linux/","_self")'><span class=flex><span class="rounded-md border border-primary-400 px-1 py-[1px] text-xs font-normal text-primary-700 dark:border-primary-600 dark:text-primary-400">Linux
+</span></span></span><span style=margin-top:.5rem class=mr-2 onclick='window.open("/tags/ca/","_self")'><span class=flex><span class="rounded-md border border-primary-400 px-1 py-[1px] text-xs font-normal text-primary-700 dark:border-primary-600 dark:text-primary-400">CA
+</span></span></span><span style=margin-top:.5rem class=mr-2 onclick='window.open("/tags/openssl/","_self")'><span class=flex><span class="rounded-md border border-primary-400 px-1 py-[1px] text-xs font-normal text-primary-700 dark:border-primary-600 dark:text-primary-400">openssl</span></span></span></div></div></div><div class="px-6 pt-4 pb-2"></div></div></a></section></div><script>var oid="views_posts/httpd+svn服务器部署.md",oid_likes="likes_posts/httpd+svn服务器部署.md"</script><script type=text/javascript src=/js/page.min.5b1bad196a6075a1e11bae1dc95f24f67b610948a00525e347566c5a62338ea78f1c7224ab9a53873dcdb2a1a7d7d391b8a8ef45561297f68806c01315b0c4f6.js integrity="sha512-WxutGWpgdaHhG64dyV8k9nthCUigBSXjR1ZsWmIzjqePHHIkq5pThz3NsqGn19ORuKjvRVYSl/aIBsATFbDE9g=="></script></section><footer class="pt-8 max-w-prose print:hidden"><div class=pt-8><hr class="border-dotted border-neutral-300 dark:border-neutral-600"><div class="flex justify-between pt-3"><span><a class="flex group mr-3" href=/2019/11/k8s-prometheus-4/><span class="mr-3 text-neutral-700 group-hover:text-primary-600 ltr:inline rtl:hidden dark:text-neutral dark:group-hover:text-primary-400">&larr;</span>
+<span class="ml-3 text-neutral-700 group-hover:text-primary-600 ltr:hidden rtl:inline dark:text-neutral dark:group-hover:text-primary-400">&rarr;</span>
+<span class="flex flex-col"><span class="mt-[0.1rem] leading-6 group-hover:underline group-hover:decoration-primary-500">高可用prometheus监控集群搭建(四)</span>
+<span class="mt-[0.1rem] text-xs text-neutral-500 dark:text-neutral-400"><time datetime="2019-11-08 19:53:19 +0800 +0800">8 November 2019</time>
+</span></span></a></span><span><a class="flex text-right group ml-3" href=/2021/04/telnet-no-route-to-host/><span class="flex flex-col"><span class="mt-[0.1rem] leading-6 group-hover:underline group-hover:decoration-primary-500">telnet探测提示No route to host的原因</span>
+<span class="mt-[0.1rem] text-xs text-neutral-500 dark:text-neutral-400"><time datetime="2021-04-15 00:00:00 +0000 UTC">15 April 2021</time>
+</span></span><span class="ml-3 text-neutral-700 group-hover:text-primary-600 ltr:inline rtl:hidden dark:text-neutral dark:group-hover:text-primary-400">&rarr;</span>
+<span class="mr-3 text-neutral-700 group-hover:text-primary-600 ltr:hidden rtl:inline dark:text-neutral dark:group-hover:text-primary-400">&larr;</span></a></span></div></div></footer></article><div id=top-scroller class="pointer-events-none absolute top-[110vh] bottom-0 w-12 ltr:right-0 rtl:left-0"><a href=#the-top class="pointer-events-auto sticky top-[calc(100vh-5.5rem)] flex h-12 w-12 mb-16 items-center justify-center rounded-full bg-neutral/50 text-xl text-neutral-700 backdrop-blur hover:text-primary-600 dark:bg-neutral-800/50 dark:text-neutral dark:hover:text-primary-400" aria-label title>&uarr;</a></div></main><footer id=site-footer class="py-10 print:hidden"><nav class="flex flex-row pb-4 text-base font-medium text-neutral-500 dark:text-neutral-400"><ul class="flex flex-col list-none sm:flex-row"><li class="flex mb-1 ltr:text-right rtl:text-left sm:mb-0 ltr:sm:mr-7 ltr:sm:last:mr-0 rtl:sm:ml-7 rtl:sm:last:ml-0"><a class="decoration-primary-500 hover:underline hover:decoration-2 hover:underline-offset-2" href=/tags/ title=Tags>标签</a></li></ul></nav><div class="flex items-center justify-between"><p class="text-sm text-neutral-500 dark:text-neutral-400">&copy;
+2024
+FeixiangFu</p><p class="text-xs text-neutral-500 dark:text-neutral-400">由 <a class="hover:underline hover:decoration-primary-400 hover:text-primary-500" href=https://gohugo.io/ target=_blank rel="noopener noreferrer">Hugo</a> & <a class="hover:underline hover:decoration-primary-400 hover:text-primary-500" href=https://blowfish.page/ target=_blank rel="noopener noreferrer">Blowfish</a> 强力驱动</p></div><script>mediumZoom(document.querySelectorAll("img:not(.nozoom)"),{margin:24,background:"rgba(0,0,0,0.5)",scrollOffset:0})</script><script type=text/javascript src=/js/process.min.62060bb247f4de2b6dde45903668fefb68d792f365587605177b1227c0cf43588701edaca0cb40e2c8e2789bd5ce67c1d2a215b9fb258c3496a7cd25e7cb5fdf.js integrity="sha512-YgYLskf03itt3kWQNmj++2jXkvNlWHYFF3sSJ8DPQ1iHAe2soMtA4sjieJvVzmfB0qIVufsljDSWp80l58tf3w=="></script></footer><div id=search-wrapper class="invisible fixed inset-0 flex h-screen w-screen cursor-default flex-col bg-neutral-500/50 p-4 backdrop-blur-sm dark:bg-neutral-900/50 sm:p-6 md:p-[10vh] lg:p-[12vh]" data-url=https://fufeixiang.com/ style=z-index:500><div id=search-modal class="flex flex-col w-full max-w-3xl min-h-0 mx-auto border rounded-md shadow-lg top-20 border-neutral-200 bg-neutral dark:border-neutral-700 dark:bg-neutral-800"><header class="relative z-10 flex items-center justify-between flex-none px-2"><form class="flex items-center flex-auto min-w-0"><div class="flex items-center justify-center w-8 h-8 text-neutral-400"><span class="relative block icon"><svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="search" class="svg-inline--fa fa-search fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentcolor" d="M505 442.7 405.3 343c-4.5-4.5-10.6-7-17-7H372c27.6-35.3 44-79.7 44-128C416 93.1 322.9.0 208 0S0 93.1.0 208s93.1 208 208 208c48.3.0 92.7-16.4 128-44v16.3c0 6.4 2.5 12.5 7 17l99.7 99.7c9.4 9.4 24.6 9.4 33.9.0l28.3-28.3c9.4-9.4 9.4-24.6.1-34zM208 336c-70.7.0-128-57.2-128-128 0-70.7 57.2-128 128-128 70.7.0 128 57.2 128 128 0 70.7-57.2 128-128 128z"/></svg></span></div><input type=search id=search-query class="flex flex-auto h-12 mx-1 bg-transparent appearance-none focus:outline-dotted focus:outline-2 focus:outline-transparent" placeholder tabindex=0></form><button id=close-search-button class="flex items-center justify-center w-8 h-8 text-neutral-700 hover:text-primary-600 dark:text-neutral dark:hover:text-primary-400" title>
+<span class="relative block icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><path fill="currentcolor" d="M310.6 361.4c12.5 12.5 12.5 32.75.0 45.25C304.4 412.9 296.2 416 288 416s-16.38-3.125-22.62-9.375L160 301.3 54.63 406.6C48.38 412.9 40.19 416 32 416S15.63 412.9 9.375 406.6c-12.5-12.5-12.5-32.75.0-45.25l105.4-105.4L9.375 150.6c-12.5-12.5-12.5-32.75.0-45.25s32.75-12.5 45.25.0L160 210.8l105.4-105.4c12.5-12.5 32.75-12.5 45.25.0s12.5 32.75.0 45.25l-105.4 105.4L310.6 361.4z"/></svg></span></button></header><section class="flex-auto px-2 overflow-auto"><ul id=search-results></ul></section></div></div></div></body></html>
